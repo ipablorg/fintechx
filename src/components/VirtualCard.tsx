@@ -18,7 +18,7 @@ const TILT_MAX = 8 // grados
  * blanco sobre cada parada pura (WCAG, ratio): #0B3D33 12.14:1 · #17805F 4.90:1
  * · #108852 4.50:1. La parada clara original #2BC49A daba 2.22:1 y se oscureció
  * a #108852, el verde más claro que pasa; con el alpha sobre la base opaca
- * bg-page/90 el compuesto sube (~5.7:1 en la parada clara), nunca baja.
+ * bg-page el compuesto sube (~5.7:1 en la parada clara), nunca baja.
  */
 const TETHER_WASH =
   'linear-gradient(135deg, rgb(11 61 51 / 0.92), rgb(23 128 95 / 0.88) 52%, rgb(16 136 82 / 0.86))'
@@ -75,7 +75,7 @@ function Face({
 }) {
   return (
     <div
-      className="absolute inset-0 overflow-hidden rounded-2xl bg-page/90 backdrop-blur-2xl"
+      className="absolute inset-0 overflow-hidden rounded-2xl bg-page"
       style={{
         backfaceVisibility: 'hidden',
         visibility: covered ? 'hidden' : 'visible',
@@ -186,7 +186,7 @@ export function CardFace({
 
   return (
     <div
-      className={`relative aspect-[1.586] w-full overflow-hidden rounded-2xl bg-page/90 backdrop-blur-2xl ${className}`}
+      className={`relative aspect-[1.586] w-full overflow-hidden rounded-2xl bg-page ${className}`}
       style={{ ...skin, ...style }}
     >
       <div aria-hidden="true" className="absolute inset-0" style={{ background: TETHER_WASH }} />
