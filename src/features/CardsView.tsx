@@ -10,16 +10,15 @@ import {
   Snowflake,
   Tv,
   Utensils,
-  X,
   type LucideIcon,
 } from 'lucide-react'
 import { AnimatePresence, LayoutGroup, motion, type Variants } from 'motion/react'
-import { useEffect, useRef, useState, type CSSProperties } from 'react'
+import { useEffect, useState, type CSSProperties } from 'react'
 
 import baLogotipo from '@/assets/ba-logotipo.png'
 import { CardFace, VirtualCard } from '@/components/VirtualCard'
 import { deriveCardActivity } from '@/data/derive'
-import { CARDS, getAsset, type CardCategory, type CardProduct } from '@/data/mock'
+import { CARDS, type CardCategory, type CardProduct } from '@/data/mock'
 import { formatDayShort, formatMoney, formatRate } from '@/lib/format'
 
 const container: Variants = {
@@ -32,13 +31,17 @@ const item: Variants = {
   show: { opacity: 1, y: 0, transition: { type: 'spring', stiffness: 230, damping: 28 } },
 }
 
-/** Vuelo de las tarjetas entre la pila colapsada y el selector. */
+/** Vuelo de las tarjetas entre la pila colapsada y el abanico. */
 const FLIGHT = { type: 'spring', stiffness: 350, damping: 32 } as const
 
-/** Separación entre tops desplegadas en el selector (px). */
-const SELECTOR_STEP = 150
 /** Canto que asoma de cada tarjeta detrás de la activa, colapsado (px). */
 const PEEK = 48
+/**
+ * Franja superior que muestra cada tarjeta del abanico (px): logo, nombre y
+ * últimos cuatro, y el número enmascarado completo. El corte cae entre el
+ * número y la fila inferior, sin trozar texto.
+ */
+const STRIP = 130
 
 const CATEGORY: Record<CardCategory, { label: string; icon: LucideIcon }> = {
   super: { label: 'Supermercado', icon: ShoppingCart },
@@ -49,15 +52,18 @@ const CATEGORY: Record<CardCategory, { label: string; icon: LucideIcon }> = {
   cafe: { label: 'Café', icon: Coffee },
 }
 
-/** Borde 1px + glow exterior en el color de marca del activo (datos, no hardcode). */
-function assetSkin(color: string, strong = false): CSSProperties {
+/**
+ * Skin Tether único para todas las tarjetas: reemplaza al criterio anterior de
+ * borde y glow por color de activo. El acento del sistema sigue siendo teal.
+ */
+function tetherSkin(strong = false): CSSProperties {
   return {
-    border: `1px solid color-mix(in srgb, ${color} 60%, transparent)`,
-    boxShadow: `0 0 70px -18px color-mix(in srgb, ${color} ${strong ? 55 : 40}%, transparent)`,
+    border: '1px solid color-mix(in srgb, #108852 60%, transparent)',
+    boxShadow: `0 0 70px -18px rgb(16 133 82 / ${strong ? 0.55 : 0.4})`,
   }
 }
 
-/** Tarjetas: pila colapsada con canto visible, selector desplegable y detalle por tarjeta. */
+/** Tarjetas: pila colapsada con canto visible, abanico hacia arriba y detalle por tarjeta. */
 export function CardsView() {
   const [activeId, setActiveId] = useState<CardProduct['id']>('card-usdt')
   const [open, setOpen] = useState(false)
@@ -71,7 +77,12 @@ export function CardsView() {
   // stacked[0] es la más cercana detrás de la activa; la profunda queda arriba.
   const stacked = CARDS.filter((c) => c.id !== activeId).slice().reverse()
 
-  const close = () => setOpen(false)
+  // Cerrar devuelve el foco a la tarjeta activa: los cantos dejan de ser
+  // alcanzables y ningún elemento enfocado queda dentro de un aria-hidden.
+  const close = () => {
+    setOpen(false)
+    document.getElementById('card-activa')?.focus()
+  }
 
   const select = (id: CardProduct['id']) => {
     setActiveId(id)
@@ -81,7 +92,7 @@ export function CardsView() {
     setOpen(false)
   }
 
-  // Escape cierra el selector sin cambiar la selección.
+  // Escape colapsa el abanico sin cambiar la selección.
   useEffect(() => {
     if (!open) return
     const onKey = (e: KeyboardEvent) => {
@@ -118,7 +129,9 @@ export function CardsView() {
             flipped={flipped}
             frozen={frozen}
             revealed={revealed}
-            onOpen={() => setOpen(true)}
+            onToggle={() => (open ? close() : setOpen(true))}
+            onClose={close}
+            onSelect={select}
             onFlip={() => setFlipped((f) => !f)}
           />
         </motion.div>
@@ -253,18 +266,17 @@ export function CardsView() {
           <img src={baLogotipo} alt="" className="h-4 w-auto" />
           <p className="text-[11px] text-ink-3">Tarjeta emitida por Banco Amazonas · Ecuador</p>
         </motion.footer>
-
-        {/* Selector desplegable */}
-        <AnimatePresence>{open && <Selector activeId={active.id} onSelect={select} onClose={close} />}</AnimatePresence>
       </motion.div>
     </LayoutGroup>
   )
 }
 
 /**
- * Pila colapsada: la tarjeta activa al frente (z máxima, abajo del grupo) y el
- * resto asomando por su canto superior. La altura del grupo se reserva sola:
- * tarjeta + (N−1) cantos. N se deriva de CARDS, nada está clavado a 3.
+ * Pila colapsada y abanico. La tarjeta activa queda al frente (z máxima, abajo
+ * del grupo) y el resto sube por encima de ella al abrir: cada una muestra una
+ * franja superior de STRIP px con su identificación. El padding superior del
+ * contenedor crece con el mismo muelle, así el contenido de abajo baja suave y
+ * nada se recorta. N se deriva de CARDS, nada está clavado a 3.
  */
 function CollapsedStack({
   active,
@@ -273,7 +285,9 @@ function CollapsedStack({
   flipped,
   frozen,
   revealed,
-  onOpen,
+  onToggle,
+  onClose,
+  onSelect,
   onFlip,
 }: {
   active: CardProduct
@@ -282,59 +296,82 @@ function CollapsedStack({
   flipped: boolean
   frozen: boolean
   revealed: boolean
-  onOpen: () => void
+  onToggle: () => void
+  onClose: () => void
+  onSelect: (id: CardProduct['id']) => void
   onFlip: () => void
 }) {
-  const activeAsset = getAsset(active.assetId)
   const levels = stacked.length
 
   return (
-    // padding-top en el contenedor: reserva el alto de los cantos y evita el
-    // colapso de margen que desalinearía los cantos respecto de la activa.
-    <div className="relative" style={{ paddingTop: levels * PEEK }}>
-      {/* Cantos detrás de la activa (no interactivos: el selector los expone) */}
-      {!open &&
-        stacked.map((card, i) => {
-          const depth = i + 1
-          return (
-            <motion.div
-              key={card.id}
-              layoutId={card.id}
-              transition={FLIGHT}
-              aria-hidden="true"
-              className="pointer-events-none absolute inset-x-0"
-              style={{
-                top: (levels - 1 - i) * PEEK,
-                zIndex: levels - depth,
-                scale: Math.max(0.96, 1 - depth * 0.02),
-                filter: `brightness(${1 - depth * 0.07})`,
-                willChange: 'transform',
-              }}
-            >
-              <CardFace card={card} skin={assetSkin(getAsset(card.assetId).color)} />
-            </motion.div>
-          )
-        })}
+    <motion.div
+      className="relative"
+      initial={false}
+      animate={{ paddingTop: levels * (open ? STRIP : PEEK) }}
+      transition={FLIGHT}
+    >
+      {/* Toque fuera del abanico: colapsa sin cambiar la selección */}
+      {open && (
+        <button type="button" aria-label="Cerrar abanico" onClick={onClose} className="fixed inset-0 z-30 cursor-default" />
+      )}
 
-      {/* Tarjeta activa al frente, abajo del grupo */}
-      {!open && (
-        <motion.div
-          key={active.id}
-          layoutId={active.id}
-          transition={FLIGHT}
-          className="relative z-20"
-        >
-          <VirtualCard
-            card={active}
-            flipped={flipped}
-            frozen={frozen}
-            revealed={revealed}
-            skin={assetSkin(activeAsset.color, true)}
-            onClick={onOpen}
-            ariaLabel="Cambiar de tarjeta"
-            ariaExpanded={open}
-          />
-          {/* Volteo explícito: botón propio para no pelear con el tap que abre el selector */}
+      {/* Tarjetas de atrás: canto de PEEK px colapsadas, franja de STRIP px en el abanico */}
+      {stacked.map((card, i) => {
+        const depth = i + 1
+        return (
+          <motion.div
+            key={card.id}
+            layoutId={card.id}
+            initial={false}
+            animate={{ y: open ? (levels - 1 - i) * (STRIP - PEEK) : 0 }}
+            transition={FLIGHT}
+            aria-hidden={!open}
+            className={open ? 'absolute inset-x-0' : 'pointer-events-none absolute inset-x-0'}
+            style={{
+              top: (levels - 1 - i) * PEEK,
+              zIndex: open ? 31 + (levels - depth) : levels - depth,
+              scale: Math.max(0.96, 1 - depth * 0.02),
+              filter: `brightness(${1 - depth * 0.07})`,
+              willChange: 'transform',
+            }}
+          >
+            {open ? (
+              <button
+                type="button"
+                onClick={() => onSelect(card.id)}
+                aria-label={`Elegir tarjeta ${card.asset} •••• ${card.last4}`}
+                className="block w-full cursor-pointer text-left"
+              >
+                <CardFace card={card} />
+              </button>
+            ) : (
+              <CardFace card={card} />
+            )}
+          </motion.div>
+        )
+      })}
+
+      {/* Tarjeta activa al frente: el toque alterna el abanico */}
+      <motion.div
+        key={active.id}
+        layoutId={active.id}
+        transition={FLIGHT}
+        className="relative"
+        style={{ zIndex: open ? 40 : 20 }}
+      >
+        <VirtualCard
+          id="card-activa"
+          card={active}
+          flipped={flipped}
+          frozen={frozen}
+          revealed={revealed}
+          skin={tetherSkin(true)}
+          onClick={onToggle}
+          ariaLabel="Cambiar de tarjeta"
+          ariaExpanded={open}
+        />
+        {/* Volteo explícito: botón propio para no pelear con el tap que abre el abanico */}
+        {!open && (
           <button
             type="button"
             aria-label="Ver reverso"
@@ -344,83 +381,8 @@ function CollapsedStack({
           >
             <RefreshCw size={18} strokeWidth={2} />
           </button>
-        </motion.div>
-      )}
-    </div>
-  )
-}
-
-/** Selector abierto: tarjetas desplegadas con scroll, sobre un velo que atenúa el contenido. */
-function Selector({
-  activeId,
-  onSelect,
-  onClose,
-}: {
-  activeId: CardProduct['id']
-  onSelect: (id: CardProduct['id']) => void
-  onClose: () => void
-}) {
-  // El solape se mide sobre la tarjeta real: cada cara muestra ~SELECTOR_STEP px.
-  const firstCard = useRef<HTMLButtonElement>(null)
-  const [overlap, setOverlap] = useState(0)
-
-  useEffect(() => {
-    const width = firstCard.current?.offsetWidth
-    if (width) setOverlap(width / 1.586 - SELECTOR_STEP)
-  }, [])
-
-  return (
-    <motion.div
-      className="fixed inset-0 z-40"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      transition={{ duration: 0.2 }}
-    >
-      {/* Velo: atenúa el contenido de abajo; tocarlo cierra sin cambiar la selección */}
-      <button
-        type="button"
-        aria-label="Cerrar selector"
-        onClick={onClose}
-        className="absolute inset-0 cursor-default bg-page/75 backdrop-blur-[2px]"
-      />
-
-      <div className="@container absolute inset-x-0 top-14 mx-auto flex h-[calc(100%-9rem)] max-w-md flex-col px-4">
-        <div className="flex items-center justify-between px-1 pb-3">
-          <p className="text-xs font-medium text-ink-2">Elige tu tarjeta</p>
-          <button type="button" onClick={onClose} className="btn btn-ghost px-3 py-1.5 text-[11px]">
-            <X size={13} strokeWidth={2.2} />
-            Cerrar
-          </button>
-        </div>
-
-        <div className="-mx-1 flex-1 overflow-y-auto overscroll-contain px-1 pb-10" style={{ scrollbarWidth: 'thin' }}>
-          {CARDS.map((card, i) => {
-            const spent = deriveCardActivity(card.id).spentThisMonth
-            return (
-              <motion.button
-                key={card.id}
-                layoutId={card.id}
-                layout
-                type="button"
-                onClick={() => onSelect(card.id)}
-                aria-label={`Elegir tarjeta ${card.asset}, gastado ${formatMoney(spent)} de ${formatMoney(card.limit)}`}
-                aria-current={card.id === activeId ? 'true' : undefined}
-                transition={FLIGHT}
-                className="relative block w-full cursor-pointer text-left"
-                ref={i === 0 ? firstCard : undefined}
-                style={{
-                  marginTop: i === 0 || !overlap ? 0 : -overlap,
-                  zIndex: CARDS.length - i,
-                  willChange: 'transform',
-                }}
-              >
-                <CardFace card={card} skin={assetSkin(getAsset(card.assetId).color, card.id === activeId)} />
-              </motion.button>
-            )
-          })}
-        </div>
-      </div>
+        )}
+      </motion.div>
     </motion.div>
   )
 }

@@ -3,7 +3,8 @@ import { motion, useReducedMotion, useSpring } from 'motion/react'
 import { useId, useState, type CSSProperties, type ReactNode } from 'react'
 
 import baLogo from '@/assets/ba-logo-white.png'
-import { getAsset, type CardProduct } from '@/data/mock'
+import tetherWhite from '@/assets/tether-white.svg'
+import type { CardProduct } from '@/data/mock'
 
 const ENTRANCE = { duration: 2.2, ease: 'easeInOut' as const, delay: 0.35 }
 
@@ -12,12 +13,22 @@ let entranceDone = false
 const FLIP_SPRING = { type: 'spring', stiffness: 240, damping: 26 } as const
 const TILT_MAX = 8 // grados
 
+/**
+ * Degradado Tether de todas las caras, oscuro→claro a 135°. Contraste del texto
+ * blanco sobre cada parada pura (WCAG, ratio): #0B3D33 12.14:1 · #17805F 4.90:1
+ * · #108852 4.50:1. La parada clara original #2BC49A daba 2.22:1 y se oscureció
+ * a #108852, el verde más claro que pasa; con el alpha sobre la base opaca
+ * bg-page/90 el compuesto sube (~5.7:1 en la parada clara), nunca baja.
+ */
+const TETHER_WASH =
+  'linear-gradient(135deg, rgb(11 61 51 / 0.92), rgb(23 128 95 / 0.88) 52%, rgb(16 136 82 / 0.86))'
+
 /** Texto con relieve sutil, como tarjeta impresa. */
 const embossed = { textShadow: '0 1px 0 rgb(255 255 255 / 0.22), 0 -1px 1px rgb(0 0 0 / 0.5)' }
 
 function Chip({ id }: { id: string }) {
   return (
-    <svg viewBox="0 0 42 32" aria-hidden="true" className="w-[11.5cqw]">
+    <svg viewBox="0 0 42 32" aria-hidden="true" className="w-[10cqw]">
       <defs>
         <linearGradient id={id} x1="0" y1="0" x2="1" y2="1">
           <stop offset="0%" stopColor="#f5e3a8" />
@@ -51,12 +62,15 @@ function Face({
   frozen,
   back = false,
   skin,
+  covered = false,
   children,
 }: {
   frozen: boolean
   back?: boolean
-  /** Borde y glow en el color de marca del activo. */
+  /** Borde y glow del skin Tether único. */
   skin?: CSSProperties
+  /** Cara que no se ve: oculta, para que nada se filtre por la base translúcida. */
+  covered?: boolean
   children: ReactNode
 }) {
   return (
@@ -64,22 +78,15 @@ function Face({
       className="absolute inset-0 overflow-hidden rounded-2xl bg-page/90 backdrop-blur-2xl"
       style={{
         backfaceVisibility: 'hidden',
+        visibility: covered ? 'hidden' : 'visible',
         transform: back ? 'rotateY(180deg)' : undefined,
         filter: frozen ? 'grayscale(1)' : 'none',
         transition: 'filter 300ms ease',
         ...skin,
       }}
     >
-      {/* Wash de marca sobre el vidrio oscuro */}
-      <div
-        aria-hidden="true"
-        className="absolute inset-0"
-        style={{
-          background: back
-            ? 'linear-gradient(215deg, rgb(192 13 13 / 0.2), transparent 58%)'
-            : 'linear-gradient(135deg, rgb(192 13 13 / 0.28), transparent 55%)',
-        }}
-      />
+      {/* Degradado Tether sobre el vidrio oscuro */}
+      <div aria-hidden="true" className="absolute inset-0" style={{ background: TETHER_WASH }} />
       {/* Brillo diagonal */}
       <div
         aria-hidden="true"
@@ -106,7 +113,6 @@ function Face({
 
 /** Contenido del frente, compartido por la tarjeta 3D y las capas planas. */
 function FrontContent({ card, revealed, chipId, noiseId }: { card: CardProduct; revealed: boolean; chipId: string; noiseId: string }) {
-  const asset = getAsset(card.assetId)
   const masked = `${card.number.slice(0, 4)} •••• •••• ${card.last4}`
 
   return (
@@ -114,17 +120,16 @@ function FrontContent({ card, revealed, chipId, noiseId }: { card: CardProduct; 
       <Noise id={noiseId} />
 
       <div className="relative flex h-full flex-col justify-between p-[5.5cqw]">
-        <div className="flex items-start justify-between">
-          <div className="flex items-center gap-3">
-            <Chip id={chipId} />
-            <Wifi strokeWidth={2} className="h-[5.5cqw] w-[5.5cqw] rotate-90 text-white/70" />
-          </div>
-          <span
-            className="flex items-center gap-[1.4cqw] rounded-full bg-black/35 px-[2.8cqw] py-[1cqw] text-[2.8cqw] font-semibold tracking-wide text-white/90"
-            style={{ boxShadow: `0 0 24px -8px color-mix(in srgb, ${asset.color} 55%, transparent)` }}
-          >
-            <img src={asset.icon} alt="" className="h-[3.3cqw] w-auto" />
-            {card.asset}
+        {/* Franja de identificación: logo Tether, nombre en negrita y últimos cuatro */}
+        <div className="flex items-center justify-between gap-3">
+          <span className="flex items-center gap-[2cqw]">
+            <img src={tetherWhite} alt="" className="h-[5.6cqw] w-auto" />
+            <span className="text-[min(4.6cqw,18px)] font-bold tracking-[0.04em] text-white" style={embossed}>
+              {card.asset}
+            </span>
+          </span>
+          <span className="text-[min(3.8cqw,15px)] font-semibold text-white/85 tabular-nums" style={embossed}>
+            •••• {card.last4}
           </span>
         </div>
 
@@ -132,7 +137,11 @@ function FrontContent({ card, revealed, chipId, noiseId }: { card: CardProduct; 
           {revealed ? card.number : masked}
         </p>
 
-        <div className="flex items-end justify-between gap-4">
+        <div className="flex items-end justify-between gap-3">
+          <div className="flex items-center gap-[2.4cqw]">
+            <Chip id={chipId} />
+            <Wifi strokeWidth={2} className="h-[4.6cqw] w-[4.6cqw] rotate-90 text-white/70" />
+          </div>
           <div className="min-w-0">
             <p className="text-[min(2.6cqw,10px)] tracking-[0.14em] text-white/55 uppercase" style={embossed}>
               Titular
@@ -180,11 +189,7 @@ export function CardFace({
       className={`relative aspect-[1.586] w-full overflow-hidden rounded-2xl bg-page/90 backdrop-blur-2xl ${className}`}
       style={{ ...skin, ...style }}
     >
-      <div
-        aria-hidden="true"
-        className="absolute inset-0"
-        style={{ background: 'linear-gradient(135deg, rgb(192 13 13 / 0.28), transparent 55%)' }}
-      />
+      <div aria-hidden="true" className="absolute inset-0" style={{ background: TETHER_WASH }} />
       <div
         aria-hidden="true"
         className="absolute inset-0"
@@ -202,10 +207,12 @@ type Props = {
   frozen?: boolean
   revealed?: boolean
   skin?: CSSProperties
-  /** Tocar la tarjeta: abre el selector (la tarjeta es el botón que lo anuncia). */
+  /** Tocar la tarjeta: alterna el abanico (la tarjeta es el botón que lo anuncia). */
   onClick?: () => void
   ariaLabel?: string
   ariaExpanded?: boolean
+  /** Id del botón, para devolverle el foco al colapsar el abanico. */
+  id?: string
 }
 
 /** Tarjeta virtual 3D de la pila: giro de entrada, tilt con puntero y flip manual. */
@@ -218,6 +225,7 @@ export function VirtualCard({
   onClick,
   ariaLabel = 'Cambiar de tarjeta',
   ariaExpanded = false,
+  id,
 }: Props) {
   const reduced = useReducedMotion()
   const [spun, setSpun] = useState(entranceDone)
@@ -247,6 +255,7 @@ export function VirtualCard({
         style={{ rotateX: tiltX, rotateY: tiltY, transformStyle: 'preserve-3d', willChange: 'transform' }}
       >
         <motion.button
+          id={id}
           type="button"
           aria-label={ariaLabel}
           aria-expanded={ariaExpanded}
@@ -259,15 +268,17 @@ export function VirtualCard({
             entranceDone = true
           }}
           style={{ transformStyle: 'preserve-3d' }}
-          className="relative block aspect-[1.586] w-full cursor-pointer rounded-2xl shadow-glow-bank"
+          className="relative block aspect-[1.586] w-full cursor-pointer rounded-2xl"
         >
-          {/* Frente */}
-          <Face frozen={frozen} skin={skin}>
-            <FrontContent card={card} revealed={revealed} chipId={chipId} noiseId={noiseId} />
+          {/* Frente: la fila inferior se levanta para despejar el botón de volteo */}
+          <Face frozen={frozen} skin={skin} covered={spun && flipped}>
+            <div className="h-full pb-[17cqw]">
+              <FrontContent card={card} revealed={revealed} chipId={chipId} noiseId={noiseId} />
+            </div>
           </Face>
 
           {/* Reverso (pre-rotado 180°) */}
-          <Face frozen={frozen} back skin={skin}>
+          <Face frozen={frozen} back skin={skin} covered={spun && !flipped}>
             <Noise id={`${noiseId}-b`} />
 
             <div className="relative flex h-full flex-col">
