@@ -61,7 +61,7 @@ function Face({
 }) {
   return (
     <div
-      className="absolute inset-0 overflow-hidden rounded-2xl bg-white/[0.05] backdrop-blur-2xl"
+      className="absolute inset-0 overflow-hidden rounded-2xl bg-page/90 backdrop-blur-2xl"
       style={{
         backfaceVisibility: 'hidden',
         transform: back ? 'rotateY(180deg)' : undefined,
@@ -177,7 +177,7 @@ export function CardFace({
 
   return (
     <div
-      className={`relative aspect-[1.586] w-full overflow-hidden rounded-2xl bg-white/[0.05] backdrop-blur-2xl ${className}`}
+      className={`relative aspect-[1.586] w-full overflow-hidden rounded-2xl bg-page/90 backdrop-blur-2xl ${className}`}
       style={{ ...skin, ...style }}
     >
       <div
@@ -274,7 +274,7 @@ export function VirtualCard({
               {/* Pista magnética */}
               <div aria-hidden="true" className="mt-[6.5cqw] h-[12cqw] w-full bg-black/85" />
 
-              <div className="flex flex-1 flex-col justify-between p-[5.5cqw]">
+              <div className="flex flex-1 flex-col justify-between p-[5.5cqw] pe-[15cqw]">
                 <div className="flex items-center gap-3">
                   <span className="flex h-[8.5cqw] flex-1 items-center justify-end rounded-sm bg-white/90 px-[2cqw] text-[min(3.6cqw,14px)] italic text-black/60">
                     {card.holder}
