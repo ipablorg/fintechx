@@ -19,7 +19,7 @@ export function LoansView() {
   return (
     <motion.div variants={container} initial="hidden" animate="show" exit={{ opacity: 0, y: -10, transition: { duration: 0.16 } }}>
       <motion.div variants={item} className="mb-4 px-1">
-        <h1 className="text-lg font-semibold tracking-tight">Créditos con garantía digital</h1>
+        <h1 className="title-large">Créditos</h1>
         <p className="mt-1 text-xs text-ink-3">Recibe stablecoins hoy y deja tus activos como garantía, sin venderlos.</p>
       </motion.div>
 
@@ -29,17 +29,17 @@ export function LoansView() {
             key={offer.id}
             variants={item}
             aria-label={`Préstamo en ${offer.asset} con garantía ${offer.collateral}`}
-            className={`card p-5 ${offer.featured ? 'border-tether/40 shadow-glow-teal' : ''}`}
+            className={`card p-5 ${offer.featured ? 'border-accent/40 shadow-glow' : ''}`}
           >
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
-                <h2 className="truncate text-sm font-medium">
+                <h2 className="text-sm font-medium">
                   Préstamo en {offer.asset} · garantía {offer.collateral}
                 </h2>
                 <p className="mt-1 text-2xl font-semibold tracking-tight tabular-nums">{formatMoney(offer.amountUsd)}</p>
               </div>
               {offer.featured && (
-                <span className="flex shrink-0 items-center gap-1 rounded-full bg-tether/15 px-2.5 py-1 text-[11px] font-semibold text-tether">
+                <span className="flex shrink-0 items-center gap-1 rounded-full bg-accent/15 px-2.5 py-1 text-[11px] font-semibold text-accent">
                   <Sparkles size={12} strokeWidth={2.2} />
                   Destacado
                 </span>
@@ -50,7 +50,7 @@ export function LoansView() {
             <div className="mt-4">
               <div className="flex items-baseline justify-between text-xs text-ink-3">
                 <span>Uso del colateral (LTV)</span>
-                <span className="font-semibold text-tether tabular-nums">{formatRate(offer.ltv)}</span>
+                <span className="font-semibold text-accent tabular-nums">{formatRate(offer.ltv)}</span>
               </div>
               <div
                 className="mt-1.5 h-2 overflow-hidden rounded-full bg-panel-2"

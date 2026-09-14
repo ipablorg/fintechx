@@ -29,14 +29,14 @@ export function Nav({ view, onChange }: NavProps) {
               aria-current={activeItem ? 'page' : undefined}
               aria-label={label}
               className={`relative flex flex-1 flex-col items-center gap-1 rounded-full py-1.5 text-[11px] font-medium transition-colors ${
-                activeItem ? 'text-bank-bright' : 'text-ink-3 hover:text-ink-2'
+                activeItem ? 'text-red-bright' : 'text-ink-3 hover:text-ink-2'
               }`}
             >
               {activeItem && (
                 <motion.span
                   layoutId="nav-pill"
                   transition={navSpring}
-                  className="absolute inset-0 rounded-full bg-bank/12"
+                  className="absolute inset-0 rounded-full bg-red-bright/12"
                 />
               )}
               <Icon size={19} strokeWidth={1.9} className="relative" />

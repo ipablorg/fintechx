@@ -60,9 +60,9 @@ Los assets de marca viven en `src/assets/` (el favicon, en `public/`):
 
 | Archivo | Uso |
 | --- | --- |
-| `ba-logo.png` | logo horizontal (marca roja + wordmark blanco): header y reverso de la tarjeta |
+| `ba-logo-white.png` | logo horizontal negativo (marca roja + wordmark blanco, para fondos oscuros): header y reverso de la tarjeta |
 | `ba-logotipo.png` | isotipo rojo: favicon y pie de la pantalla Tarjetas |
-| `tether.svg` | logo de Tether (rebrand 2024): sello co-brand del header y badge USDT de la tarjeta |
+| `tether.svg` | logo de Tether (rebrand 2024, recoloreado a `#009393`): sello co-brand del header y badge USDT de la tarjeta |
 | `bitcoin.svg` / `usdcoin.svg` | logos de activos en la lista del portafolio |
 
 Se descargaron de bancoamazonas.com y tether.to. Para usar el kit de marca oficial basta con

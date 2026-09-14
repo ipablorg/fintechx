@@ -32,6 +32,11 @@ export function HomeView() {
 
   return (
     <motion.div variants={container} initial="hidden" animate="show" exit={{ opacity: 0, y: -10, transition: { duration: 0.16 } }}>
+      <motion.div variants={item} className="mb-4 px-1">
+        <h1 className="title-large">Inicio</h1>
+        <p className="mt-1 text-xs text-ink-3">Tu portafolio en dólares y sus activos</p>
+      </motion.div>
+
       {/* Portafolio */}
       <motion.section variants={item} className="card p-5" aria-label="Portafolio total">
         <div className="flex items-baseline justify-between">
@@ -49,7 +54,7 @@ export function HomeView() {
         <AnimatedNumber
           value={portfolio.total}
           format={formatMoney}
-          className="mt-1.5 block text-[34px] leading-none font-semibold tracking-tight"
+          className="title-large mt-2 block"
         />
         <p className="mt-2 text-xs text-ink-3">Valor en USD · últimos {portfolio.rangeDays} días</p>
 
@@ -77,7 +82,7 @@ export function HomeView() {
       {/* Activos */}
       <motion.section variants={item} className="mt-6" aria-label="Mis activos">
         <div className="mb-2 flex items-baseline justify-between px-1">
-          <h2 className="text-sm font-medium">Mis activos</h2>
+          <h2 className="title-section">Mis activos</h2>
           <span className="text-xs text-ink-3">{ASSETS.length} activos</span>
         </div>
 
@@ -92,7 +97,7 @@ export function HomeView() {
               </span>
 
               <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-medium">{asset.name}</p>
+                <p className="truncate headline">{asset.name}</p>
                 <p className="text-xs text-ink-3">
                   {formatUnits(asset.balance)} {asset.symbol}
                 </p>

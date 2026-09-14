@@ -61,7 +61,7 @@ export function CardsView() {
   return (
     <motion.div variants={container} initial="hidden" animate="show" exit={{ opacity: 0, y: -10, transition: { duration: 0.16 } }}>
       <motion.div variants={item} className="mb-4 px-1">
-        <h1 className="text-lg font-semibold tracking-tight">Tarjetas</h1>
+        <h1 className="title-large">Tarjetas</h1>
         <p className="mt-1 text-xs text-ink-3">Tu tarjeta virtual · powered by Banco Amazonas</p>
       </motion.div>
 
@@ -124,14 +124,14 @@ export function CardsView() {
       {/* Límite mensual */}
       <motion.section variants={item} className="card mt-5 p-5" aria-label="Límite mensual">
         <div className="flex items-baseline justify-between">
-          <h2 className="text-sm font-medium">Límite mensual</h2>
+          <h2 className="title-section">Límite mensual</h2>
           <span className="text-xs text-ink-3 tabular-nums">{formatRate(ratio)} del límite</span>
         </div>
 
         <AnimatedNumber
           value={spentThisMonth}
           format={formatMoney}
-          className="mt-1.5 block text-[30px] leading-none font-semibold tracking-tight tabular-nums"
+          className="title-large mt-2 block"
         />
 
         <div
@@ -144,7 +144,7 @@ export function CardsView() {
           aria-label="Uso del límite mensual"
         >
           <motion.div
-            className="h-full rounded-full bg-bank-bright"
+            className="h-full rounded-full bg-red-bright"
             initial={{ width: 0 }}
             animate={{ width: `${ratio * 100}%` }}
             transition={{ type: 'spring', stiffness: 90, damping: 20 }}
@@ -159,7 +159,7 @@ export function CardsView() {
       {/* Movimientos */}
       <motion.section variants={item} className="card mt-4 p-5" aria-label="Movimientos de la tarjeta">
         <div className="mb-3 flex items-baseline justify-between">
-          <h2 className="text-sm font-medium">Movimientos de la tarjeta</h2>
+          <h2 className="title-section">Movimientos de la tarjeta</h2>
           <span className="text-xs text-ink-3">últimos {transactions.length}</span>
         </div>
 
@@ -169,12 +169,12 @@ export function CardsView() {
             const Icon = meta.icon
             return (
               <div key={t.id} className="flex items-center gap-3 py-2.5">
-                <span className="grid size-10 shrink-0 place-items-center rounded-full bg-bank/12 text-bank-bright">
+                <span className="grid size-10 shrink-0 place-items-center rounded-full bg-red-bright/12 text-red-bright">
                   <Icon size={17} strokeWidth={1.9} />
                 </span>
 
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-medium">{t.merchant}</p>
+                  <p className="truncate headline">{t.merchant}</p>
                   <p className="text-xs text-ink-3">
                     {meta.label} · {formatDayShort(t.date)}
                   </p>

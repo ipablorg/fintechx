@@ -1,4 +1,4 @@
-import baLogo from '@/assets/ba-logo.png'
+import baLogo from '@/assets/ba-logo-white.png'
 import tetherLogo from '@/assets/tether.svg'
 
 /** Barra superior fija: marca del banco + sello co-branded con Tether. */

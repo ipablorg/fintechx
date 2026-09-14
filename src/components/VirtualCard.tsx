@@ -2,7 +2,7 @@ import { Snowflake, Wifi } from 'lucide-react'
 import { motion, useReducedMotion, useSpring } from 'motion/react'
 import { useId, useState, type ReactNode } from 'react'
 
-import baLogo from '@/assets/ba-logo.png'
+import baLogo from '@/assets/ba-logo-white.png'
 import tetherLogo from '@/assets/tether.svg'
 import { CARD } from '@/data/mock'
 
@@ -15,7 +15,7 @@ const embossed = { textShadow: '0 1px 0 rgb(255 255 255 / 0.22), 0 -1px 1px rgb(
 
 function Chip({ id }: { id: string }) {
   return (
-    <svg width="42" height="32" viewBox="0 0 42 32" aria-hidden="true">
+    <svg viewBox="0 0 42 32" aria-hidden="true" className="w-[11.5cqw]">
       <defs>
         <linearGradient id={id} x1="0" y1="0" x2="1" y2="1">
           <stop offset="0%" stopColor="#f5e3a8" />
@@ -70,8 +70,8 @@ function Face({
         className="absolute inset-0"
         style={{
           background: back
-            ? 'linear-gradient(215deg, rgb(232 33 33 / 0.16), transparent 55%, rgb(38 161 123 / 0.14))'
-            : 'linear-gradient(135deg, rgb(232 33 33 / 0.26), transparent 52%, rgb(38 161 123 / 0.22))',
+            ? 'linear-gradient(215deg, rgb(232 33 33 / 0.16), transparent 55%, rgb(0 147 147 / 0.16))'
+            : 'linear-gradient(135deg, rgb(232 33 33 / 0.26), transparent 52%, rgb(0 147 147 / 0.24))',
         }}
       />
       {/* Brillo diagonal */}
@@ -135,7 +135,7 @@ export function VirtualCard({ frozen = false, revealed = false }: Props) {
   }
 
   return (
-    <div className="mx-auto w-full max-w-[420px]" style={{ perspective: 1200 }}>
+    <div className="@container w-full" style={{ perspective: 1200 }}>
       <motion.div
         onPointerMove={onPointerMove}
         onPointerLeave={resetTilt}
@@ -152,26 +152,26 @@ export function VirtualCard({ frozen = false, revealed = false }: Props) {
           }
           onAnimationComplete={() => setSpun(true)}
           style={{ transformStyle: 'preserve-3d' }}
-          className="relative block aspect-[1.586] w-full cursor-pointer rounded-2xl shadow-[0_24px_60px_-20px_rgb(0_0_0/0.85)]"
+          className="relative block aspect-[1.586] w-full cursor-pointer rounded-2xl shadow-glow-bank"
         >
           {/* Frente */}
           <Face frozen={frozen}>
             <Noise id={noiseId} />
 
-            <div className="relative flex h-full flex-col justify-between p-5">
+            <div className="relative flex h-full flex-col justify-between p-[5.5cqw]">
               <div className="flex items-start justify-between">
                 <div className="flex items-center gap-3">
                   <Chip id={chipId} />
-                  <Wifi size={20} strokeWidth={2} className="rotate-90 text-white/70" />
+                  <Wifi strokeWidth={2} className="h-[5.5cqw] w-[5.5cqw] rotate-90 text-white/70" />
                 </div>
-                <span className="flex items-center gap-1.5 rounded-full bg-black/35 px-2.5 py-1 text-[10px] font-semibold tracking-wide text-white/90">
-                  <img src={tetherLogo} alt="" className="h-3 w-auto" />
+                <span className="flex items-center gap-[1.4cqw] rounded-full bg-black/35 px-[2.8cqw] py-[1cqw] text-[2.8cqw] font-semibold tracking-wide text-white/90">
+                  <img src={tetherLogo} alt="" className="h-[3.3cqw] w-auto" />
                   USDT
                 </span>
               </div>
 
               <p
-                className="text-[19px] font-medium tracking-[0.16em] text-white tabular-nums"
+                className="text-[clamp(15px,5.4cqw,23px)] font-medium tracking-[0.16em] text-white tabular-nums"
                 style={embossed}
               >
                 {revealed ? CARD.number : masked}
@@ -179,22 +179,22 @@ export function VirtualCard({ frozen = false, revealed = false }: Props) {
 
               <div className="flex items-end justify-between gap-4">
                 <div className="min-w-0">
-                  <p className="text-[9px] tracking-[0.14em] text-white/55 uppercase" style={embossed}>
+                  <p className="text-[min(2.6cqw,10px)] tracking-[0.14em] text-white/55 uppercase" style={embossed}>
                     Titular
                   </p>
-                  <p className="truncate text-[13px] font-semibold text-white" style={embossed}>
+                  <p className="truncate text-[min(3.6cqw,14px)] font-semibold text-white" style={embossed}>
                     {CARD.holder}
                   </p>
                 </div>
                 <div>
-                  <p className="text-[9px] tracking-[0.14em] text-white/55 uppercase" style={embossed}>
+                  <p className="text-[min(2.6cqw,10px)] tracking-[0.14em] text-white/55 uppercase" style={embossed}>
                     Vence
                   </p>
-                  <p className="text-[13px] font-semibold text-white tabular-nums" style={embossed}>
+                  <p className="text-[min(3.6cqw,14px)] font-semibold text-white tabular-nums" style={embossed}>
                     {CARD.expiry}
                   </p>
                 </div>
-                <p className="text-lg font-bold text-white italic" style={embossed}>
+                <p className="text-[min(5cqw,19px)] font-bold text-white italic" style={embossed}>
                   VISA
                 </p>
               </div>
@@ -207,21 +207,21 @@ export function VirtualCard({ frozen = false, revealed = false }: Props) {
 
             <div className="relative flex h-full flex-col">
               {/* Pista magnética */}
-              <div aria-hidden="true" className="mt-6 h-11 w-full bg-black/85" />
+              <div aria-hidden="true" className="mt-[6.5cqw] h-[12cqw] w-full bg-black/85" />
 
-              <div className="flex flex-1 flex-col justify-between p-5">
+              <div className="flex flex-1 flex-col justify-between p-[5.5cqw]">
                 <div className="flex items-center gap-3">
-                  <span className="flex h-9 flex-1 items-center justify-end rounded-sm bg-white/90 px-2 italic text-black/60">
+                  <span className="flex h-[8.5cqw] flex-1 items-center justify-end rounded-sm bg-white/90 px-[2cqw] text-[min(3.6cqw,14px)] italic text-black/60">
                     {CARD.holder}
                   </span>
-                  <span className="rounded-sm bg-white/90 px-2 py-1.5 text-sm font-semibold text-black tabular-nums">
+                  <span className="rounded-sm bg-white/90 px-[2cqw] py-[1.4cqw] text-[min(3.6cqw,14px)] font-semibold text-black tabular-nums">
                     {CARD.cvv}
                   </span>
                 </div>
 
                 <div className="flex items-end justify-between gap-3">
-                  <img src={baLogo} alt="Banco Amazonas" className="h-5 w-auto" />
-                  <p className="text-[11px] text-white/65" style={embossed}>
+                  <img src={baLogo} alt="Banco Amazonas" className="h-[5.5cqw] w-auto" />
+                  <p className="text-[min(3cqw,12px)] text-white/65" style={embossed}>
                     powered by <span className="font-semibold text-white">Banco Amazonas</span>
                   </p>
                 </div>

@@ -3,14 +3,18 @@
 /*
  * Design system — Banco Amazonas × Tether co-brand.
  *
- * Warm near-black surfaces (never blue/navy) with a dual accent: bank red
- * (#C00D0D, brightened #E82121) for the Banco Amazonas brand and primary CTAs,
- * Tether teal (#26A17B) for digital-asset sections. Asset colors (USDC blue,
- * Bitcoin orange) double as chart/series colors.
+ * Warm near-black surfaces (never blue/navy) with a dual accent and a strict
+ * hierarchy: red is the Banco Amazonas brand (surfaces, fills, gradients),
+ * teal is the accent for primary actions, focus and everything crypto/USDT.
+ * Red and teal are never equal-weight accents in the same block.
  *
- * Chart series (#E82121, #26A17B, #F7931A) are validated against the panel
- * surface (#151318) with the dataviz palette validator: contrast ≥ 3:1 for
- * thin strokes. Never draw thin strokes with raw #C00D0D on dark surfaces.
+ * Escala teal sobre la página #0B0A0C (contraste WCAG precalculado, método de
+ * ratio — todos ≥3:1, los dos primeros también ≥4.5:1 para texto pequeño):
+ *   teal-300 #67DADA 11.87:1 · teal-400 #45CFCF 10.42:1 · teal-500 #2BC1C1 8.94:1
+ *   teal-600 #17B0B0  7.41:1 · teal-700 #009393  5.26:1
+ * Rojo sobre oscuro: #C00D0D solo 3.11:1 → superficies y rellenos; para texto
+ * e iconos pequeños se usa --color-red-bright #E5484D (5.05:1 ≥ 4.5 ✓).
+ * USDC #2775CA y Bitcoin #F7931A son colores de marca correctos.
  */
 @theme {
   --font-sans: 'Inter Variable', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
@@ -29,10 +33,18 @@
   --color-line: #26222b; /* bordes hairline */
   --color-grid: #1a171e; /* gridlines de gráficas */
 
-  /* Marca */
-  --color-bank: #c00d0d; /* Banco Amazonas: marca y CTAs primarios */
-  --color-bank-bright: #e82121; /* rojo legible sobre oscuro (texto, series, focos) */
-  --color-tether: #26a17b; /* acento de activos digitales (USDT, préstamos) */
+  /* Marca — banco */
+  --color-bank: #c00d0d; /* superficies y rellenos Banco Amazonas */
+  --color-red-bright: #e5484d; /* rojo para texto e iconos pequeños (5.05:1) */
+
+  /* Marca — Tether y acento */
+  --color-teal-300: #67dada;
+  --color-teal-400: #45cfcf;
+  --color-teal-500: #2bc1c1;
+  --color-teal-600: #17b0b0;
+  --color-teal-700: #009393;
+  --color-accent: var(--color-teal-600); /* acciones primarias, foco, texto teal pequeño */
+  --color-tether: #009393; /* rellenos, badges y degradados de marca Tether */
 
   /* Activos */
   --color-usdc: #2775ca;
@@ -42,8 +54,8 @@
   --color-up: #34d399;
   --color-down: #fb7185;
 
-  --shadow-glow: 0 0 44px -10px rgb(232 33 33 / 0.42);
-  --shadow-glow-teal: 0 0 44px -10px rgb(38 161 123 / 0.42);
+  --shadow-glow: 0 0 44px -10px rgb(23 176 176 / 0.4); /* acento teal */
+  --shadow-glow-bank: 0 0 44px -10px rgb(229 72 77 / 0.38); /* superficie banco */
 }
 
 html {
@@ -56,11 +68,11 @@ body {
 }
 
 ::selection {
-  background: rgb(232 33 33 / 0.26);
+  background: rgb(23 176 176 / 0.28);
 }
 
 :focus-visible {
-  outline: 2px solid var(--color-bank-bright);
+  outline: 2px solid var(--color-accent);
   outline-offset: 2px;
   border-radius: 6px;
 }
@@ -85,9 +97,22 @@ body {
 }
 
 @utility btn-primary {
-  @apply bg-bank text-ink shadow-glow hover:brightness-110;
+  @apply bg-accent text-page shadow-glow hover:brightness-110;
 }
 
 @utility btn-ghost {
   @apply border border-line bg-panel-2 text-ink hover:bg-line/60;
+}
+
+/* Escala tipográfica (iOS HIG): títulos centralizados, nada artesanal. */
+@utility title-large {
+  @apply text-[32px] leading-tight font-bold tracking-[-0.02em];
+}
+
+@utility title-section {
+  @apply text-[21px] leading-tight font-bold tracking-[-0.01em];
+}
+
+@utility headline {
+  @apply text-[16px] leading-snug font-semibold;
 }

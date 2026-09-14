@@ -57,7 +57,7 @@ export const ASSETS: Asset[] = [
     balance: 4250.75,
     usdValue: 4250.75,
     change24h: 0.0002,
-    color: '#26a17b',
+    color: '#009393',
     icon: tetherUrl,
     spark: walk(11, 4250.75, 0.0002),
   },
