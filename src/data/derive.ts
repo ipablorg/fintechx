@@ -1,4 +1,4 @@
-import { CARD_ACTIVITY, DAYS, PORTFOLIO_HISTORY, TODAY, type HistoryPoint } from './mock'
+import { CARDS, DAYS, PORTFOLIO_HISTORY, TODAY, type CardProduct, type HistoryPoint } from './mock'
 
 export type BalancePoint = HistoryPoint
 
@@ -25,14 +25,16 @@ export function derivePortfolio(rangeDays = PORTFOLIO_RANGE_DAYS) {
 
 const MAX_CARD_TXNS = 8
 
-/** Actividad de la tarjeta: últimos movimientos y gasto acumulado del mes en curso. */
-export function deriveCardActivity() {
-  const transactions = [...CARD_ACTIVITY].sort((a, b) => b.date.getTime() - a.date.getTime()).slice(0, MAX_CARD_TXNS)
+/** Actividad de una tarjeta: la tarjeta, sus últimos movimientos y el gasto del mes en curso. */
+export function deriveCardActivity(cardId: CardProduct['id']) {
+  const card = CARDS.find((c) => c.id === cardId) ?? CARDS[0]!
 
-  const spentThisMonth = CARD_ACTIVITY.reduce((acc, t) => {
+  const transactions = [...card.activity].sort((a, b) => b.date.getTime() - a.date.getTime()).slice(0, MAX_CARD_TXNS)
+
+  const spentThisMonth = card.activity.reduce((acc, t) => {
     const sameMonth = t.date.getMonth() === TODAY.getMonth() && t.date.getFullYear() === TODAY.getFullYear()
     return sameMonth ? acc + Math.abs(t.amount) : acc
   }, 0)
 
-  return { transactions, spentThisMonth }
+  return { card, transactions, spentThisMonth }
 }

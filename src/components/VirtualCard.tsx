@@ -1,12 +1,14 @@
 import { Snowflake, Wifi } from 'lucide-react'
 import { motion, useReducedMotion, useSpring } from 'motion/react'
-import { useId, useState, type ReactNode } from 'react'
+import { useId, useState, type CSSProperties, type ReactNode } from 'react'
 
 import baLogo from '@/assets/ba-logo-white.png'
-import tetherLogo from '@/assets/tether.svg'
-import { CARD } from '@/data/mock'
+import { getAsset, type CardProduct } from '@/data/mock'
 
 const ENTRANCE = { duration: 2.2, ease: 'easeInOut' as const, delay: 0.35 }
+
+/** ponytail: el giro de entrada corre una sola vez por carga de página. */
+let entranceDone = false
 const FLIP_SPRING = { type: 'spring', stiffness: 240, damping: 26 } as const
 const TILT_MAX = 8 // grados
 
@@ -48,20 +50,24 @@ function Noise({ id }: { id: string }) {
 function Face({
   frozen,
   back = false,
+  skin,
   children,
 }: {
   frozen: boolean
   back?: boolean
+  /** Borde y glow en el color de marca del activo. */
+  skin?: CSSProperties
   children: ReactNode
 }) {
   return (
     <div
-      className="absolute inset-0 overflow-hidden rounded-2xl border border-white/10 bg-white/[0.06] backdrop-blur-xl"
+      className="absolute inset-0 overflow-hidden rounded-2xl bg-white/[0.05] backdrop-blur-2xl"
       style={{
         backfaceVisibility: 'hidden',
         transform: back ? 'rotateY(180deg)' : undefined,
         filter: frozen ? 'grayscale(1)' : 'none',
         transition: 'filter 300ms ease',
+        ...skin,
       }}
     >
       {/* Wash de marca sobre el vidrio oscuro */}
@@ -70,8 +76,8 @@ function Face({
         className="absolute inset-0"
         style={{
           background: back
-            ? 'linear-gradient(215deg, rgb(232 33 33 / 0.16), transparent 55%, rgb(0 147 147 / 0.16))'
-            : 'linear-gradient(135deg, rgb(232 33 33 / 0.26), transparent 52%, rgb(0 147 147 / 0.24))',
+            ? 'linear-gradient(215deg, rgb(192 13 13 / 0.2), transparent 58%)'
+            : 'linear-gradient(135deg, rgb(192 13 13 / 0.28), transparent 55%)',
         }}
       />
       {/* Brillo diagonal */}
@@ -99,15 +105,17 @@ function Face({
 }
 
 type Props = {
+  card: CardProduct
   frozen?: boolean
   revealed?: boolean
+  skin?: CSSProperties
 }
 
 /** Tarjeta virtual 3D: giro de entrada, tilt con puntero y flip manual. */
-export function VirtualCard({ frozen = false, revealed = false }: Props) {
+export function VirtualCard({ card, frozen = false, revealed = false, skin }: Props) {
   const reduced = useReducedMotion()
   const [flipped, setFlipped] = useState(false)
-  const [spun, setSpun] = useState(false)
+  const [spun, setSpun] = useState(entranceDone)
   const chipId = useId()
   const noiseId = useId()
 
@@ -116,7 +124,8 @@ export function VirtualCard({ frozen = false, revealed = false }: Props) {
   const tiltY = useSpring(0, { stiffness: 220, damping: 22 })
   const canTilt = !reduced && spun
 
-  const groups = CARD.number.split(' ')
+  const asset = getAsset(card.assetId)
+  const groups = card.number.split(' ')
   const masked = `${groups[0]} •••• •••• ${groups[groups.length - 1]}`
 
   const entrance = !reduced && !spun
@@ -150,12 +159,15 @@ export function VirtualCard({ frozen = false, revealed = false }: Props) {
           transition={
             entrance ? ENTRANCE : reduced ? { duration: 0 } : FLIP_SPRING
           }
-          onAnimationComplete={() => setSpun(true)}
+          onAnimationComplete={() => {
+            setSpun(true)
+            entranceDone = true
+          }}
           style={{ transformStyle: 'preserve-3d' }}
           className="relative block aspect-[1.586] w-full cursor-pointer rounded-2xl shadow-glow-bank"
         >
           {/* Frente */}
-          <Face frozen={frozen}>
+          <Face frozen={frozen} skin={skin}>
             <Noise id={noiseId} />
 
             <div className="relative flex h-full flex-col justify-between p-[5.5cqw]">
@@ -164,9 +176,9 @@ export function VirtualCard({ frozen = false, revealed = false }: Props) {
                   <Chip id={chipId} />
                   <Wifi strokeWidth={2} className="h-[5.5cqw] w-[5.5cqw] rotate-90 text-white/70" />
                 </div>
-                <span className="flex items-center gap-[1.4cqw] rounded-full bg-black/35 px-[2.8cqw] py-[1cqw] text-[2.8cqw] font-semibold tracking-wide text-white/90">
-                  <img src={tetherLogo} alt="" className="h-[3.3cqw] w-auto" />
-                  USDT
+                <span className="flex items-center gap-[1.4cqw] rounded-full bg-black/35 px-[2.8cqw] py-[1cqw] text-[2.8cqw] font-semibold tracking-wide text-white/90" style={{ boxShadow: `0 0 24px -8px color-mix(in srgb, ${asset.color} 55%, transparent)` }}>
+                  <img src={asset.icon} alt="" className="h-[3.3cqw] w-auto" />
+                  {card.asset}
                 </span>
               </div>
 
@@ -174,7 +186,7 @@ export function VirtualCard({ frozen = false, revealed = false }: Props) {
                 className="text-[clamp(15px,5.4cqw,23px)] font-medium tracking-[0.16em] text-white tabular-nums"
                 style={embossed}
               >
-                {revealed ? CARD.number : masked}
+                {revealed ? card.number : masked}
               </p>
 
               <div className="flex items-end justify-between gap-4">
@@ -183,7 +195,7 @@ export function VirtualCard({ frozen = false, revealed = false }: Props) {
                     Titular
                   </p>
                   <p className="truncate text-[min(3.6cqw,14px)] font-semibold text-white" style={embossed}>
-                    {CARD.holder}
+                    {card.holder}
                   </p>
                 </div>
                 <div>
@@ -191,7 +203,7 @@ export function VirtualCard({ frozen = false, revealed = false }: Props) {
                     Vence
                   </p>
                   <p className="text-[min(3.6cqw,14px)] font-semibold text-white tabular-nums" style={embossed}>
-                    {CARD.expiry}
+                    {card.expiry}
                   </p>
                 </div>
                 <p className="text-[min(5cqw,19px)] font-bold text-white italic" style={embossed}>
@@ -202,7 +214,7 @@ export function VirtualCard({ frozen = false, revealed = false }: Props) {
           </Face>
 
           {/* Reverso (pre-rotado 180°) */}
-          <Face frozen={frozen} back>
+          <Face frozen={frozen} back skin={skin}>
             <Noise id={`${noiseId}-b`} />
 
             <div className="relative flex h-full flex-col">
@@ -212,10 +224,10 @@ export function VirtualCard({ frozen = false, revealed = false }: Props) {
               <div className="flex flex-1 flex-col justify-between p-[5.5cqw]">
                 <div className="flex items-center gap-3">
                   <span className="flex h-[8.5cqw] flex-1 items-center justify-end rounded-sm bg-white/90 px-[2cqw] text-[min(3.6cqw,14px)] italic text-black/60">
-                    {CARD.holder}
+                    {card.holder}
                   </span>
                   <span className="rounded-sm bg-white/90 px-[2cqw] py-[1.4cqw] text-[min(3.6cqw,14px)] font-semibold text-black tabular-nums">
-                    {CARD.cvv}
+                    {card.cvv}
                   </span>
                 </div>
 
