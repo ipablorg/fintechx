@@ -54,6 +54,23 @@ src/
 - **Moneda y locale** se cambian en un solo lugar: `src/lib/format.ts`.
 - La navegación entre secciones usa estado local con transiciones `AnimatePresence`; las secciones fuera de `Inicio` son placeholders listos para crecer.
 
+## Co-brand (Banco Amazonas × Tether)
+
+Los assets de marca viven en `src/assets/` (el favicon, en `public/`):
+
+| Archivo | Uso |
+| --- | --- |
+| `ba-logo.png` | logo horizontal (marca roja + wordmark blanco): header y reverso de la tarjeta |
+| `ba-logotipo.png` | isotipo rojo: favicon y pie de la pantalla Tarjetas |
+| `tether.svg` | logo de Tether (rebrand 2024): sello co-brand del header y badge USDT de la tarjeta |
+| `bitcoin.svg` / `usdcoin.svg` | logos de activos en la lista del portafolio |
+
+Se descargaron de bancoamazonas.com y tether.to. Para usar el kit de marca oficial basta con
+reemplazar esos archivos conservando los mismos nombres: ningún componente cambia. Los colores
+verificados de ambas marcas viven como tokens en `src/index.css` (`--color-bank` `#C00D0D`,
+`--color-bank-bright` `#E82121`, `--color-tether` `#26A17B`, `--color-usdc` `#2775CA`,
+`--color-bitcoin` `#F7931A`).
+
 ## Próximos pasos sugeridos
 
 - Router real cuando haya más pantallas: **TanStack Router** (o React Router).

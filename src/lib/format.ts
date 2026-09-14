@@ -10,13 +10,9 @@ const money = new Intl.NumberFormat(LOCALE, {
   maximumFractionDigits: 2,
 })
 
-const moneySigned = new Intl.NumberFormat(LOCALE, {
-  style: 'currency',
-  currency: CURRENCY,
-  currencyDisplay: 'narrowSymbol',
+const units = new Intl.NumberFormat(LOCALE, {
   minimumFractionDigits: 2,
-  maximumFractionDigits: 2,
-  signDisplay: 'always',
+  maximumFractionDigits: 4,
 })
 
 const numberCompact = new Intl.NumberFormat(LOCALE, {
@@ -30,12 +26,18 @@ const pct = new Intl.NumberFormat(LOCALE, {
   signDisplay: 'always',
 })
 
+const rate = new Intl.NumberFormat(LOCALE, {
+  style: 'percent',
+  maximumFractionDigits: 1,
+})
+
 export function formatMoney(value: number): string {
   return money.format(value)
 }
 
-export function formatMoneySigned(value: number): string {
-  return moneySigned.format(value)
+/** Cantidad en unidades del activo (USDT, USDC, BTC…), sin símbolo de moneda. */
+export function formatUnits(value: number): string {
+  return units.format(value)
 }
 
 /** Ticks de eje: compacto para miles ($26 k), entero para valores chicos. */
@@ -50,27 +52,14 @@ export function formatPct(value: number): string {
   return pct.format(value)
 }
 
+/** Porcentaje sin signo (LTV, APR). */
+export function formatRate(value: number): string {
+  return rate.format(value)
+}
+
 const dayShort = new Intl.DateTimeFormat(LOCALE, { day: 'numeric', month: 'short' })
-const weekdayDay = new Intl.DateTimeFormat(LOCALE, { weekday: 'short', day: 'numeric' })
-const monthShort = new Intl.DateTimeFormat(LOCALE, { month: 'short' })
-const dateLong = new Intl.DateTimeFormat(LOCALE, { weekday: 'long', day: 'numeric', month: 'long' })
 
 /** "8 sep" */
 export function formatDayShort(d: Date): string {
   return dayShort.format(d)
-}
-
-/** "lun 8" */
-export function formatWeekdayDay(d: Date): string {
-  return weekdayDay.format(d)
-}
-
-/** "sep" */
-export function formatMonthShort(d: Date): string {
-  return monthShort.format(d)
-}
-
-/** "lunes, 8 de septiembre" */
-export function formatDateLong(d: Date): string {
-  return dateLong.format(d)
 }

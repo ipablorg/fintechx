@@ -17,9 +17,11 @@ type Props = {
   points: BalancePoint[]
   /** Cambia con el rango para re-dibujar la entrada de la línea. */
   rangeKey: number
+  /** Color de serie; debe contrastar ≥3:1 contra el panel. */
+  color?: string
 }
 
-export function BalanceChart({ points, rangeKey }: Props) {
+export function BalanceChart({ points, rangeKey, color = 'var(--color-tether)' }: Props) {
   const [ref, { width }] = useMeasure<HTMLDivElement>()
   const [active, setActive] = useState<number | null>(null)
   const reduced = useReducedMotion()
@@ -70,8 +72,8 @@ export function BalanceChart({ points, rangeKey }: Props) {
       role="img"
       aria-label={
         last
-          ? `Evolución del saldo. Saldo actual ${formatMoney(last.value)}. Usa las flechas para recorrer los días.`
-          : 'Evolución del saldo'
+          ? `Evolución del portafolio. Valor actual ${formatMoney(last.value)}. Usa las flechas para recorrer los días.`
+          : 'Evolución del portafolio'
       }
       onKeyDown={onKeyDown}
       onFocus={() => setActive((a) => a ?? n - 1)}
@@ -90,8 +92,8 @@ export function BalanceChart({ points, rangeKey }: Props) {
           >
             <defs>
               <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="var(--color-series-1)" stopOpacity={0.22} />
-                <stop offset="100%" stopColor="var(--color-series-1)" stopOpacity={0} />
+                <stop offset="0%" stopColor={color} stopOpacity={0.22} />
+                <stop offset="100%" stopColor={color} stopOpacity={0} />
               </linearGradient>
             </defs>
 
@@ -119,7 +121,7 @@ export function BalanceChart({ points, rangeKey }: Props) {
               key={`line-${rangeKey}`}
               d={monotonePath(geom.pts)}
               fill="none"
-              stroke="var(--color-series-1)"
+              stroke={color}
               strokeWidth={2}
               strokeLinecap="round"
               strokeLinejoin="round"
@@ -137,13 +139,13 @@ export function BalanceChart({ points, rangeKey }: Props) {
                     <motion.circle
                       cx={end.x}
                       cy={end.y}
-                      fill="var(--color-series-1)"
+                      fill={color}
                       initial={{ r: 4, opacity: 0.45 }}
                       animate={{ r: 15, opacity: 0 }}
                       transition={{ duration: 2.2, repeat: Infinity, ease: 'easeOut', delay: 1 }}
                     />
                   )}
-                  <circle cx={end.x} cy={end.y} r={4.5} fill="var(--color-series-1)" stroke="var(--color-panel)" strokeWidth={2} />
+                  <circle cx={end.x} cy={end.y} r={4.5} fill={color} stroke="var(--color-panel)" strokeWidth={2} />
                 </g>
               )
             })()}
@@ -164,7 +166,7 @@ export function BalanceChart({ points, rangeKey }: Props) {
                   cx={geom.x(active)}
                   cy={geom.pts[active]!.y}
                   r={4.5}
-                  fill="var(--color-series-1)"
+                  fill={color}
                   stroke="var(--color-panel)"
                   strokeWidth={2}
                 />

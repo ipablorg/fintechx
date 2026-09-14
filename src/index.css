@@ -1,40 +1,49 @@
 @import 'tailwindcss';
 
 /*
- * Sistema de diseño FintechX — modo oscuro premium (único tema).
+ * Design system — Banco Amazonas × Tether co-brand.
  *
- * Los colores de series (series-1 / series-2) están validados contra la
- * superficie `panel` (#0c111b) con el validador de paletas dataviz:
- * ΔE deutan 23.8 · ΔE visión normal 27.4 · contraste ≥ 3:1. Si cambias
- * cualquiera de los tres valores, vuelve a validar el conjunto.
+ * Warm near-black surfaces (never blue/navy) with a dual accent: bank red
+ * (#C00D0D, brightened #E82121) for the Banco Amazonas brand and primary CTAs,
+ * Tether teal (#26A17B) for digital-asset sections. Asset colors (USDC blue,
+ * Bitcoin orange) double as chart/series colors.
+ *
+ * Chart series (#E82121, #26A17B, #F7931A) are validated against the panel
+ * surface (#151318) with the dataviz palette validator: contrast ≥ 3:1 for
+ * thin strokes. Never draw thin strokes with raw #C00D0D on dark surfaces.
  */
 @theme {
   --font-sans: 'Inter Variable', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
 
   /* Planos */
-  --color-page: #05070c; /* fondo de página */
-  --color-panel: #0c111b; /* superficie de tarjetas y gráficas */
-  --color-panel-2: #121a2a; /* superficie elevada (popovers, tooltips) */
+  --color-page: #0b0a0c; /* fondo de página */
+  --color-panel: #151318; /* superficie de tarjetas y gráficas */
+  --color-panel-2: #1d1a20; /* superficie elevada (popovers, tooltips, chips) */
 
   /* Tinta */
-  --color-ink: #eef2f8; /* texto primario */
-  --color-ink-2: #a7b0c3; /* texto secundario */
-  --color-ink-3: #67718a; /* texto atenuado (ejes, etiquetas) */
+  --color-ink: #f4f2f5; /* texto primario */
+  --color-ink-2: #a39fab; /* texto secundario */
+  --color-ink-3: #6b6675; /* texto atenuado (ejes, etiquetas) */
 
   /* Cromo */
-  --color-line: #1c2434; /* bordes hairline */
-  --color-grid: #151d2c; /* gridlines de gráficas */
+  --color-line: #26222b; /* bordes hairline */
+  --color-grid: #1a171e; /* gridlines de gráficas */
 
-  /* Marca y datos */
-  --color-accent: #2fd18c; /* acento de UI (botones, focos) */
-  --color-series-1: #10a874; /* serie 1: ingresos / saldo (mint) */
-  --color-series-2: #5c6ae0; /* serie 2: gastos (periwinkle) */
+  /* Marca */
+  --color-bank: #c00d0d; /* Banco Amazonas: marca y CTAs primarios */
+  --color-bank-bright: #e82121; /* rojo legible sobre oscuro (texto, series, focos) */
+  --color-tether: #26a17b; /* acento de activos digitales (USDT, préstamos) */
+
+  /* Activos */
+  --color-usdc: #2775ca;
+  --color-bitcoin: #f7931a;
 
   /* Semánticos (solo texto de deltas y estados) */
   --color-up: #34d399;
   --color-down: #fb7185;
 
-  --shadow-glow: 0 0 44px -10px rgb(47 209 140 / 0.4);
+  --shadow-glow: 0 0 44px -10px rgb(232 33 33 / 0.42);
+  --shadow-glow-teal: 0 0 44px -10px rgb(38 161 123 / 0.42);
 }
 
 html {
@@ -47,11 +56,11 @@ body {
 }
 
 ::selection {
-  background: rgb(47 209 140 / 0.28);
+  background: rgb(232 33 33 / 0.26);
 }
 
 :focus-visible {
-  outline: 2px solid var(--color-accent);
+  outline: 2px solid var(--color-bank-bright);
   outline-offset: 2px;
   border-radius: 6px;
 }
@@ -62,8 +71,23 @@ body {
   scrollbar-color: var(--color-line) transparent;
 }
 
-/* Tarjeta base del sistema */
+/* Superficie base del sistema */
 @utility card {
   @apply rounded-2xl border border-line bg-panel/75 backdrop-blur-xl;
 }
 
+/*
+ * Botones: todo control, chip y CTA es 100 % redondo (rounded-full) y parte
+ * de aquí, para que los call sites se mantengan cortos.
+ */
+@utility btn {
+  @apply inline-flex items-center justify-center gap-2 rounded-full px-4 py-2.5 font-medium transition;
+}
+
+@utility btn-primary {
+  @apply bg-bank text-ink shadow-glow hover:brightness-110;
+}
+
+@utility btn-ghost {
+  @apply border border-line bg-panel-2 text-ink hover:bg-line/60;
+}
