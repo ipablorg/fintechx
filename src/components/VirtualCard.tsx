@@ -104,17 +104,122 @@ function Face({
   )
 }
 
+/** Contenido del frente, compartido por la tarjeta 3D y las capas planas. */
+function FrontContent({ card, revealed, chipId, noiseId }: { card: CardProduct; revealed: boolean; chipId: string; noiseId: string }) {
+  const asset = getAsset(card.assetId)
+  const masked = `${card.number.slice(0, 4)} •••• •••• ${card.last4}`
+
+  return (
+    <>
+      <Noise id={noiseId} />
+
+      <div className="relative flex h-full flex-col justify-between p-[5.5cqw]">
+        <div className="flex items-start justify-between">
+          <div className="flex items-center gap-3">
+            <Chip id={chipId} />
+            <Wifi strokeWidth={2} className="h-[5.5cqw] w-[5.5cqw] rotate-90 text-white/70" />
+          </div>
+          <span
+            className="flex items-center gap-[1.4cqw] rounded-full bg-black/35 px-[2.8cqw] py-[1cqw] text-[2.8cqw] font-semibold tracking-wide text-white/90"
+            style={{ boxShadow: `0 0 24px -8px color-mix(in srgb, ${asset.color} 55%, transparent)` }}
+          >
+            <img src={asset.icon} alt="" className="h-[3.3cqw] w-auto" />
+            {card.asset}
+          </span>
+        </div>
+
+        <p className="text-[clamp(15px,5.4cqw,23px)] font-medium tracking-[0.16em] text-white tabular-nums" style={embossed}>
+          {revealed ? card.number : masked}
+        </p>
+
+        <div className="flex items-end justify-between gap-4">
+          <div className="min-w-0">
+            <p className="text-[min(2.6cqw,10px)] tracking-[0.14em] text-white/55 uppercase" style={embossed}>
+              Titular
+            </p>
+            <p className="truncate text-[min(3.6cqw,14px)] font-semibold text-white" style={embossed}>
+              {card.holder}
+            </p>
+          </div>
+          <div>
+            <p className="text-[min(2.6cqw,10px)] tracking-[0.14em] text-white/55 uppercase" style={embossed}>
+              Vence
+            </p>
+            <p className="text-[min(3.6cqw,14px)] font-semibold text-white tabular-nums" style={embossed}>
+              {card.expiry}
+            </p>
+          </div>
+          <p className="text-[min(5cqw,19px)] font-bold text-white italic" style={embossed}>
+            VISA
+          </p>
+        </div>
+      </div>
+    </>
+  )
+}
+
+/** Rostro frontal (sin interacción): lo usan la tarjeta activa y las capas de la pila. */
+export function CardFace({
+  card,
+  revealed = false,
+  skin,
+  className = '',
+  style,
+}: {
+  card: CardProduct
+  revealed?: boolean
+  skin?: CSSProperties
+  className?: string
+  style?: CSSProperties
+}) {
+  const chipId = useId()
+  const noiseId = useId()
+
+  return (
+    <div
+      className={`relative aspect-[1.586] w-full overflow-hidden rounded-2xl bg-white/[0.05] backdrop-blur-2xl ${className}`}
+      style={{ ...skin, ...style }}
+    >
+      <div
+        aria-hidden="true"
+        className="absolute inset-0"
+        style={{ background: 'linear-gradient(135deg, rgb(192 13 13 / 0.28), transparent 55%)' }}
+      />
+      <div
+        aria-hidden="true"
+        className="absolute inset-0"
+        style={{ background: 'linear-gradient(115deg, rgb(255 255 255 / 0.08), transparent 45%)' }}
+      />
+      <FrontContent card={card} revealed={revealed} chipId={chipId} noiseId={noiseId} />
+    </div>
+  )
+}
+
 type Props = {
   card: CardProduct
+  /** Estado de volteo controlado desde la vista (botón "Ver reverso"). */
+  flipped?: boolean
   frozen?: boolean
   revealed?: boolean
   skin?: CSSProperties
+  /** Tocar la tarjeta: abre el selector (la tarjeta es el botón que lo anuncia). */
+  onClick?: () => void
+  ariaLabel?: string
+  ariaExpanded?: boolean
 }
 
-/** Tarjeta virtual 3D: giro de entrada, tilt con puntero y flip manual. */
-export function VirtualCard({ card, frozen = false, revealed = false, skin }: Props) {
+/** Tarjeta virtual 3D de la pila: giro de entrada, tilt con puntero y flip manual. */
+export function VirtualCard({
+  card,
+  flipped = false,
+  frozen = false,
+  revealed = false,
+  skin,
+  onClick,
+  ariaLabel = 'Cambiar de tarjeta',
+  ariaExpanded = false,
+}: Props) {
   const reduced = useReducedMotion()
-  const [flipped, setFlipped] = useState(false)
   const [spun, setSpun] = useState(entranceDone)
   const chipId = useId()
   const noiseId = useId()
@@ -123,10 +228,6 @@ export function VirtualCard({ card, frozen = false, revealed = false, skin }: Pr
   const tiltX = useSpring(0, { stiffness: 220, damping: 22 })
   const tiltY = useSpring(0, { stiffness: 220, damping: 22 })
   const canTilt = !reduced && spun
-
-  const asset = getAsset(card.assetId)
-  const groups = card.number.split(' ')
-  const masked = `${groups[0]} •••• •••• ${groups[groups.length - 1]}`
 
   const entrance = !reduced && !spun
   const rotateY = (spun ? 360 : 0) + (flipped ? 180 : 0)
@@ -138,27 +239,21 @@ export function VirtualCard({ card, frozen = false, revealed = false, skin }: Pr
     tiltX.set(-((e.clientY - rect.top) / rect.height - 0.5) * TILT_MAX * 2)
   }
 
-  const resetTilt = () => {
-    tiltX.set(0)
-    tiltY.set(0)
-  }
-
   return (
     <div className="@container w-full" style={{ perspective: 1200 }}>
       <motion.div
-        onPointerMove={onPointerMove}
-        onPointerLeave={resetTilt}
-        style={{ rotateX: tiltX, rotateY: tiltY, transformStyle: 'preserve-3d' }}
+        onPointerMove={canTilt ? onPointerMove : undefined}
+        onPointerLeave={canTilt ? () => (tiltX.set(0), tiltY.set(0)) : undefined}
+        style={{ rotateX: tiltX, rotateY: tiltY, transformStyle: 'preserve-3d', willChange: 'transform' }}
       >
         <motion.button
           type="button"
-          aria-label="Girar tarjeta"
-          onClick={() => setFlipped((f) => !f)}
+          aria-label={ariaLabel}
+          aria-expanded={ariaExpanded}
+          onClick={onClick}
           initial={{ rotateY: 0 }}
           animate={entrance ? { rotateY: [0, 180, 360] } : { rotateY }}
-          transition={
-            entrance ? ENTRANCE : reduced ? { duration: 0 } : FLIP_SPRING
-          }
+          transition={entrance ? ENTRANCE : reduced ? { duration: 0 } : FLIP_SPRING}
           onAnimationComplete={() => {
             setSpun(true)
             entranceDone = true
@@ -168,49 +263,7 @@ export function VirtualCard({ card, frozen = false, revealed = false, skin }: Pr
         >
           {/* Frente */}
           <Face frozen={frozen} skin={skin}>
-            <Noise id={noiseId} />
-
-            <div className="relative flex h-full flex-col justify-between p-[5.5cqw]">
-              <div className="flex items-start justify-between">
-                <div className="flex items-center gap-3">
-                  <Chip id={chipId} />
-                  <Wifi strokeWidth={2} className="h-[5.5cqw] w-[5.5cqw] rotate-90 text-white/70" />
-                </div>
-                <span className="flex items-center gap-[1.4cqw] rounded-full bg-black/35 px-[2.8cqw] py-[1cqw] text-[2.8cqw] font-semibold tracking-wide text-white/90" style={{ boxShadow: `0 0 24px -8px color-mix(in srgb, ${asset.color} 55%, transparent)` }}>
-                  <img src={asset.icon} alt="" className="h-[3.3cqw] w-auto" />
-                  {card.asset}
-                </span>
-              </div>
-
-              <p
-                className="text-[clamp(15px,5.4cqw,23px)] font-medium tracking-[0.16em] text-white tabular-nums"
-                style={embossed}
-              >
-                {revealed ? card.number : masked}
-              </p>
-
-              <div className="flex items-end justify-between gap-4">
-                <div className="min-w-0">
-                  <p className="text-[min(2.6cqw,10px)] tracking-[0.14em] text-white/55 uppercase" style={embossed}>
-                    Titular
-                  </p>
-                  <p className="truncate text-[min(3.6cqw,14px)] font-semibold text-white" style={embossed}>
-                    {card.holder}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-[min(2.6cqw,10px)] tracking-[0.14em] text-white/55 uppercase" style={embossed}>
-                    Vence
-                  </p>
-                  <p className="text-[min(3.6cqw,14px)] font-semibold text-white tabular-nums" style={embossed}>
-                    {card.expiry}
-                  </p>
-                </div>
-                <p className="text-[min(5cqw,19px)] font-bold text-white italic" style={embossed}>
-                  VISA
-                </p>
-              </div>
-            </div>
+            <FrontContent card={card} revealed={revealed} chipId={chipId} noiseId={noiseId} />
           </Face>
 
           {/* Reverso (pre-rotado 180°) */}
