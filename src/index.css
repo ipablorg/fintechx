@@ -51,7 +51,7 @@
   --color-bitcoin: #f7931a;
 
   /* Semánticos (solo texto de deltas y estados) */
-  --color-up: #34d399;
+  --color-up: var(--color-teal-500); /* 8.94:1 — deltas positivos, sin verdes sueltos */
   --color-down: #fb7185;
 
   --shadow-glow: 0 0 44px -10px rgb(23 176 176 / 0.4); /* acento teal */
