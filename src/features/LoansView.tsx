@@ -1,4 +1,4 @@
-import { ArrowLeft, Sparkles } from 'lucide-react'
+import { Sparkles } from 'lucide-react'
 import { motion, type Variants } from 'motion/react'
 
 import { LOAN_OFFERS } from '@/data/mock'
@@ -15,19 +15,10 @@ const item: Variants = {
 }
 
 /** Créditos respaldados por activos digitales: recibes stablecoins, dejas colateral. */
-export function LoansView({ onBack }: { onBack: () => void }) {
+export function LoansView() {
   return (
     <motion.div variants={container} initial="hidden" animate="show" exit={{ opacity: 0, y: -10, transition: { duration: 0.16 } }}>
       <motion.div variants={item} className="mb-4 px-1">
-        <button
-          type="button"
-          onClick={onBack}
-          aria-label="Volver al inicio"
-          className="mb-3 inline-flex cursor-pointer items-center gap-1.5 text-sm text-ink-2 transition-colors hover:text-ink"
-        >
-          <ArrowLeft size={16} strokeWidth={2} />
-          Volver
-        </button>
         <h1 className="title-large">Créditos</h1>
         <p className="mt-1 text-xs text-ink-3">Recibe stablecoins hoy y deja tus activos como garantía, sin venderlos.</p>
       </motion.div>
@@ -38,7 +29,7 @@ export function LoansView({ onBack }: { onBack: () => void }) {
             key={offer.id}
             variants={item}
             aria-label={`Préstamo en ${offer.asset} con garantía ${offer.collateral}`}
-            className={`card p-5 ${offer.featured ? 'border-accent/40 shadow-glow' : ''}`}
+            className={`glass rounded-3xl p-5 ${offer.featured ? 'border-white/25' : ''}`}
           >
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
@@ -48,7 +39,7 @@ export function LoansView({ onBack }: { onBack: () => void }) {
                 <p className="mt-1 text-2xl font-semibold tracking-tight tabular-nums">{formatMoney(offer.amountUsd)}</p>
               </div>
               {offer.featured && (
-                <span className="flex shrink-0 items-center gap-1 rounded-full bg-accent/15 px-2.5 py-1 text-[11px] font-semibold text-accent">
+                <span className="flex shrink-0 items-center gap-1 rounded-full bg-white/10 px-2.5 py-1 text-[11px] font-semibold text-white">
                   <Sparkles size={12} strokeWidth={2.2} />
                   Destacado
                 </span>
@@ -59,36 +50,36 @@ export function LoansView({ onBack }: { onBack: () => void }) {
             <div className="mt-4">
               <div className="flex items-baseline justify-between text-xs text-ink-3">
                 <span>Uso del colateral (LTV)</span>
-                <span className="font-semibold text-accent tabular-nums">{formatRate(offer.ltv)}</span>
+                <span className="font-semibold text-ink tabular-nums">{formatRate(offer.ltv)}</span>
               </div>
               <div
-                className="mt-1.5 h-2 overflow-hidden rounded-full bg-panel-2"
+                className="mt-1.5 h-2 overflow-hidden rounded-full bg-white/10"
                 role="progressbar"
                 aria-valuenow={Math.round(offer.ltv * 100)}
                 aria-valuemin={0}
                 aria-valuemax={100}
                 aria-label="Loan-to-value del colateral"
               >
-                <div className="h-full rounded-full bg-tether" style={{ width: `${offer.ltv * 100}%` }} />
+                <div className="h-full rounded-full bg-white/85" style={{ width: `${offer.ltv * 100}%` }} />
               </div>
             </div>
 
             <dl className="mt-4 grid grid-cols-3 gap-2 text-center">
-              <div className="rounded-2xl bg-panel-2/60 px-2 py-2.5">
+              <div className="rounded-2xl bg-white/[0.05] px-2 py-2.5">
                 <dt className="text-[10px] tracking-wide text-ink-3 uppercase">APR</dt>
                 <dd className="mt-0.5 text-sm font-semibold tabular-nums">{formatRate(offer.apr)}</dd>
               </div>
-              <div className="rounded-2xl bg-panel-2/60 px-2 py-2.5">
+              <div className="rounded-2xl bg-white/[0.05] px-2 py-2.5">
                 <dt className="text-[10px] tracking-wide text-ink-3 uppercase">Plazo</dt>
                 <dd className="mt-0.5 text-sm font-semibold tabular-nums">{offer.termMonths} meses</dd>
               </div>
-              <div className="rounded-2xl bg-panel-2/60 px-2 py-2.5">
+              <div className="rounded-2xl bg-white/[0.05] px-2 py-2.5">
                 <dt className="text-[10px] tracking-wide text-ink-3 uppercase">Cuota mensual</dt>
                 <dd className="mt-0.5 text-sm font-semibold tabular-nums">{formatMoney(offer.monthlyUsd)}</dd>
               </div>
             </dl>
 
-            <button type="button" className={`btn mt-4 w-full ${offer.featured ? 'btn-primary' : 'btn-ghost'}`}>
+            <button type="button" className={`btn mt-4 w-full text-sm ${offer.featured ? 'btn-primary' : 'btn-ghost'}`}>
               Solicitar crédito
             </button>
           </motion.section>

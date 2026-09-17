@@ -56,6 +56,25 @@ export type CardProduct = {
   activity: CardTxn[]
 }
 
+/** Contacto frecuente: avatar de iniciales con color propio (no hay fotos). */
+export type Contact = {
+  id: string
+  name: string
+  initials: string
+  color: string
+}
+
+/** Fuente única de contactos: acciones rápidas de Inicio y Enviar dinero. */
+export const CONTACTS: Contact[] = [
+  { id: 'c-marta', name: 'Marta Ríos', initials: 'MR', color: '#e5484d' },
+  { id: 'c-diego', name: 'Diego Paredes', initials: 'DP', color: '#2775ca' },
+  { id: 'c-lucia', name: 'Lucía Ferrer', initials: 'LF', color: '#f7931a' },
+  { id: 'c-andres', name: 'Andrés Silva', initials: 'AS', color: '#8e8e99' },
+]
+
+/** Usuario de la demo: perfil de Inicio y Ajustes. */
+export const USER = { name: 'Pablo', email: 'pablo@loopay.com', initials: 'PB', color: '#c00d0d' }
+
 export const ASSETS: Asset[] = [
   {
     id: 'usdt',

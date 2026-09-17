@@ -1,13 +1,20 @@
 import { AnimatePresence, MotionConfig, motion } from 'motion/react'
 import { useCallback, useState } from 'react'
 
-import { Header } from '@/components/Header'
+import { AuroraBackground } from '@/components/AuroraBackground'
+import { BottomNav } from '@/components/BottomNav'
+import { CardsView } from '@/features/CardsView'
 import { HomeView } from '@/features/HomeView'
 import { LoansView } from '@/features/LoansView'
+import { SendMoneyView } from '@/features/SendMoneyView'
+import { SettingsView } from '@/features/SettingsView'
 import { SplashView } from '@/features/SplashView'
 import { WelcomeView } from '@/features/WelcomeView'
+import { CONTACTS, type CardProduct, type Contact } from '@/data/mock'
+import type { Tab } from '@/lib/nav'
 
-type View = 'inicio' | 'creditos'
+/** Vista activa: una pestaña de la nav o Enviar dinero como pantalla sobre ella. */
+export type View = Tab | 'enviar'
 type Phase = 'splash' | 'welcome' | 'app'
 
 const INTRO_KEY = 'fx-intro-seen'
@@ -26,8 +33,12 @@ function initialPhase(): Phase {
 }
 
 export default function App() {
-  const [view, setView] = useState<View>('inicio')
   const [phase, setPhase] = useState<Phase>(initialPhase)
+  const [view, setView] = useState<View>('inicio')
+  // La tarjeta activa se eleva aquí: el chip de Inicio y la pila de Tarjetas
+  // comparten la misma selección.
+  const [activeId, setActiveId] = useState<CardProduct['id']>('card-principal')
+  const [sendContact, setSendContact] = useState<Contact['id']>(CONTACTS[0]!.id)
 
   // El splash solo avanza a la bienvenida: la marca de "vista" la pone el gesto.
   const finishSplash = useCallback(() => setPhase('welcome'), [])
@@ -41,44 +52,64 @@ export default function App() {
     setPhase('app')
   }, [])
 
+  // Cerrar sesión borra la marca de intro y regresa a la BIENVENIDA, no al splash.
+  const logout = useCallback(() => {
+    try {
+      sessionStorage.removeItem(INTRO_KEY)
+    } catch {
+      // Almacenamiento no disponible: nada que limpiar.
+    }
+    setView('inicio')
+    setPhase('welcome')
+  }, [])
+
+  // Enviar vive sobre la pestaña activa: al cerrar se vuelve a Inicio.
+  const openSend = useCallback((contactId?: Contact['id']) => {
+    if (contactId) setSendContact(contactId)
+    setView('enviar')
+  }, [])
+
+  // La pestaña visible debajo de Enviar sigue siendo Inicio.
+  const tab: View = view === 'enviar' ? 'inicio' : view
+
   return (
     <MotionConfig reducedMotion="user">
-      <div className="min-h-dvh">
-        {/* Resplandores ambientales tras la columna de la app */}
-        <div aria-hidden="true" className="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
-          <div className="absolute -top-44 left-1/2 h-[440px] w-[620px] -translate-x-1/2 rounded-full bg-bank/[0.09] blur-[130px]" />
-          <div className="absolute top-1/3 -right-44 h-[400px] w-[520px] rounded-full bg-tether/[0.09] blur-[130px]" />
-        </div>
+      <AuroraBackground />
 
-        {/* Una sola transición por fase: splash → bienvenida → app */}
-        <AnimatePresence mode="wait">
-          {phase === 'splash' && <SplashView key="splash" onDone={finishSplash} />}
-          {phase === 'welcome' && <WelcomeView key="welcome" onDone={finishWelcome} />}
-          {phase === 'app' && (
-            <motion.div
-              key="app"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1, transition: { duration: 0.3 } }}
-              exit={{ opacity: 0, transition: { duration: 0.2 } }}
-            >
-              {/* Columna tipo teléfono: el fondo de página sigue de borde a borde */}
-              <div className="mx-auto w-full max-w-md">
-                <Header onCredits={() => setView('creditos')} />
+      {/* Una sola transición por fase: splash → bienvenida → app */}
+      <AnimatePresence mode="wait">
+        {phase === 'splash' && <SplashView key="splash" onDone={finishSplash} />}
+        {phase === 'welcome' && <WelcomeView key="welcome" onDone={finishWelcome} />}
+        {phase === 'app' && (
+          <motion.div
+            key="app"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1, transition: { duration: 0.3 } }}
+            exit={{ opacity: 0, transition: { duration: 0.2 } }}
+          >
+            {/* Columna tipo teléfono: el fondo de página sigue de borde a borde */}
+            <div className="mx-auto w-full max-w-md px-4 pt-[calc(env(safe-area-inset-top)+20px)] pb-32">
+              <AnimatePresence mode="wait">
+                {tab === 'inicio' && (
+                  <HomeView key="inicio" activeId={activeId} onOpenCards={() => setView('tarjetas')} onSend={openSend} />
+                )}
+                {tab === 'tarjetas' && <CardsView key="tarjetas" activeId={activeId} onSelect={setActiveId} />}
+                {tab === 'creditos' && <LoansView key="creditos" />}
+                {tab === 'ajustes' && <SettingsView key="ajustes" onLogout={logout} />}
+              </AnimatePresence>
+            </div>
 
-                <main className="px-4 pt-4 pb-36">
-                  <AnimatePresence mode="wait">
-                    {view === 'inicio' ? (
-                      <HomeView key="inicio" />
-                    ) : (
-                      <LoansView key="creditos" onBack={() => setView('inicio')} />
-                    )}
-                  </AnimatePresence>
-                </main>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
+            <BottomNav view={tab} onChange={setView} />
+
+            {/* Enviar dinero: pantalla que entra sobre la pestaña activa */}
+            <AnimatePresence>
+              {view === 'enviar' && (
+                <SendMoneyView key="enviar" contactId={sendContact} onDone={() => setView('inicio')} />
+              )}
+            </AnimatePresence>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </MotionConfig>
   )
 }

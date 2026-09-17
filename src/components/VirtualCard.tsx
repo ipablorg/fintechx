@@ -15,14 +15,12 @@ const FLIP_SPRING = { type: 'spring', stiffness: 240, damping: 26 } as const
 const TILT_MAX = 8 // grados
 
 /**
- * Degradado Tether de todas las caras, oscuro→claro a 135°. Contraste del texto
- * blanco sobre cada parada pura (WCAG, ratio): #0B3D33 12.14:1 · #17805F 4.90:1
- * · #108852 4.50:1. La parada clara original #2BC49A daba 2.22:1 y se oscureció
- * a #108852, el verde más claro que pasa; con el alpha sobre la base opaca
- * bg-page el compuesto sube (~5.7:1 en la parada clara), nunca baja.
+ * Vidrio ahumado de todas las caras: carbón translúcido con blur fuerte y un
+ * brillo diagonal con tinte rojizo sutil. El texto blanco se lee sobre la base
+ * carbón compuesta con la aurora con holgura (≥7:1 en la zona más clara).
  */
-const TETHER_WASH =
-  'linear-gradient(135deg, rgb(11 61 51 / 0.92), rgb(23 128 95 / 0.88) 52%, rgb(16 136 82 / 0.86))'
+const SMOKE_SHEEN =
+  'linear-gradient(125deg, rgb(255 255 255 / 0.12), rgb(255 255 255 / 0.03) 42%, rgb(229 72 77 / 0.12))'
 
 /** Texto con relieve sutil, como tarjeta impresa. */
 const embossed = { textShadow: '0 1px 0 rgb(255 255 255 / 0.22), 0 -1px 1px rgb(0 0 0 / 0.5)' }
@@ -32,9 +30,9 @@ function Chip({ id }: { id: string }) {
     <svg viewBox="0 0 42 32" aria-hidden="true" className="w-[10cqw]">
       <defs>
         <linearGradient id={id} x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0%" stopColor="#f5e3a8" />
-          <stop offset="50%" stopColor="#c9a856" />
-          <stop offset="100%" stopColor="#8f7430" />
+          <stop offset="0%" stopColor="#f4f4f6" />
+          <stop offset="50%" stopColor="#c6c6cf" />
+          <stop offset="100%" stopColor="#8b8b95" />
         </linearGradient>
       </defs>
       <rect width="42" height="32" rx="6" fill={`url(#${id})`} />
@@ -68,7 +66,7 @@ function Face({
 }: {
   frozen: boolean
   back?: boolean
-  /** Borde y glow del skin Tether único. */
+  /** Borde y glow del skin de vidrio ahumado. */
   skin?: CSSProperties
   /** Cara que no se ve: oculta, para que nada se filtre por la base translúcida. */
   covered?: boolean
@@ -76,7 +74,7 @@ function Face({
 }) {
   return (
     <div
-      className="absolute inset-0 overflow-hidden rounded-2xl bg-page"
+      className="absolute inset-0 overflow-hidden rounded-2xl bg-card/55 backdrop-blur-2xl"
       style={{
         backfaceVisibility: 'hidden',
         visibility: covered ? 'hidden' : 'visible',
@@ -86,14 +84,8 @@ function Face({
         ...skin,
       }}
     >
-      {/* Degradado Tether sobre el vidrio oscuro */}
-      <div aria-hidden="true" className="absolute inset-0" style={{ background: TETHER_WASH }} />
-      {/* Brillo diagonal */}
-      <div
-        aria-hidden="true"
-        className="absolute inset-0"
-        style={{ background: 'linear-gradient(115deg, rgb(255 255 255 / 0.08), transparent 45%)' }}
-      />
+      {/* Brillo diagonal con tinte rojizo sobre el vidrio */}
+      <div aria-hidden="true" className="absolute inset-0" style={{ background: SMOKE_SHEEN }} />
 
       {children}
 
@@ -196,15 +188,10 @@ export function CardFace({
 
   return (
     <div
-      className={`@container relative aspect-[1.586] w-full overflow-hidden rounded-2xl bg-page ${className}`}
+      className={`@container relative aspect-[1.586] w-full overflow-hidden rounded-2xl bg-card/55 backdrop-blur-2xl ${className}`}
       style={{ ...skin, ...style }}
     >
-      <div aria-hidden="true" className="absolute inset-0" style={{ background: TETHER_WASH }} />
-      <div
-        aria-hidden="true"
-        className="absolute inset-0"
-        style={{ background: 'linear-gradient(115deg, rgb(255 255 255 / 0.08), transparent 45%)' }}
-      />
+      <div aria-hidden="true" className="absolute inset-0" style={{ background: SMOKE_SHEEN }} />
       <FrontContent card={card} revealed={revealed} chipId={chipId} noiseId={noiseId} />
     </div>
   )

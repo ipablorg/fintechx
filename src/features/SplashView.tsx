@@ -2,6 +2,7 @@ import { motion, useReducedMotion } from 'motion/react'
 import { useEffect, useRef } from 'react'
 
 import baLogo from '@/assets/ba-logo-white.png'
+import { AuroraBackground } from '@/components/AuroraBackground'
 import { PoweredBy } from '@/components/PoweredBy'
 
 const SPLASH_MS = 2000
@@ -30,16 +31,13 @@ export function SplashView({ onDone }: { onDone: () => void }) {
       role="presentation"
       onPointerDown={finish}
       exit={{ opacity: 0, scale: 0.98, transition: { duration: 0.3 } }}
-      className="relative grid min-h-dvh cursor-pointer place-items-center overflow-hidden bg-page"
+      className="relative grid min-h-dvh cursor-pointer place-items-center overflow-hidden"
     >
+      <AuroraBackground />
+
       {/* Botón invisible a pantalla completa: el toque lo cubre el onPointerDown
           del contenedor y el teclado (Enter/Space nativo) lo cubre este botón. */}
       <button type="button" aria-label="Saltar introducción" onClick={finish} className="absolute inset-0 z-10 cursor-pointer" />
-
-      {/* Resplandor tenue detrás del logo */}
-      <div aria-hidden="true" className="pointer-events-none absolute inset-0">
-        <div className="absolute top-1/2 left-1/2 h-[360px] w-[540px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-bank/[0.07] blur-[120px]" />
-      </div>
 
       <motion.div
         initial={reduced ? { opacity: 0 } : { scale: 0.6, opacity: 0 }}

@@ -5,7 +5,7 @@ import { useEffect, useState } from 'react'
 import { CardFace, VirtualCard } from '@/components/VirtualCard'
 import { deriveCardActivity } from '@/data/derive'
 import { CARDS, type CardLimit, type CardProduct } from '@/data/mock'
-import { tetherSkin } from '@/data/skin'
+import { CARD_SKIN } from '@/data/skin'
 
 /** Vuelo de las tarjetas entre la pila colapsada y el abanico. */
 const FLIGHT = { type: 'spring', stiffness: 350, damping: 32 } as const
@@ -240,7 +240,7 @@ function CollapsedStack({
           flipped={flipped}
           frozen={frozen}
           revealed={revealed}
-          skin={tetherSkin()}
+          skin={CARD_SKIN}
           onClick={onToggle}
           ariaLabel="Cambiar de tarjeta"
           ariaExpanded={open}

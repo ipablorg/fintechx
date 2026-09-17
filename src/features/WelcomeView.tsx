@@ -7,8 +7,8 @@ import { BottomSheet } from '@/components/BottomSheet'
 import { PoweredBy } from '@/components/PoweredBy'
 import { SlideToStart } from '@/components/SlideToStart'
 import { CardFace } from '@/components/VirtualCard'
-import { CARDS, type CardProduct } from '@/data/mock'
-import { tetherSkin } from '@/data/skin'
+import { CARDS } from '@/data/mock'
+import { CARD_SKIN } from '@/data/skin'
 
 const container: Variants = {
   hidden: {},
@@ -20,8 +20,12 @@ const item: Variants = {
   show: { opacity: 1, y: 0, transition: { type: 'spring', stiffness: 230, damping: 28 } },
 }
 
-/** ponytail: la bienvenida muestra la tarjeta principal; no hay selección aún. */
-const HERO_CARD_ID: CardProduct['id'] = 'card-principal'
+/** Capas del abanico de bienvenida, de adelante hacia atrás. */
+const FAN_LAYERS = [
+  { tilt: 0, x: 0, y: 0, z: 3, filter: 'drop-shadow(0 18px 40px rgb(0 0 0 / 0.45))' },
+  { tilt: -13, x: 10, y: 12, z: 2, filter: 'brightness(0.45)' },
+  { tilt: -24, x: 20, y: 24, z: 1, filter: 'brightness(0.32)' },
+]
 
 const SERVICES: Array<{ id: string; label: string; icon: LucideIcon }> = [
   { id: 'tarjetas', label: 'Tarjetas USDT respaldadas', icon: CreditCard },
@@ -43,7 +47,6 @@ const SHEET_LABEL: Record<Sheet, string> = {
 export function WelcomeView({ onDone }: { onDone: () => void }) {
   const reduced = useReducedMotion()
   const [sheet, setSheet] = useState<Sheet | null>(null)
-  const hero = CARDS.find((c) => c.id === HERO_CARD_ID) ?? CARDS[0]!
 
   return (
     <motion.div
@@ -66,14 +69,29 @@ export function WelcomeView({ onDone }: { onDone: () => void }) {
         Tarjetas USDT, pagos, créditos con garantía cripto y tu portafolio multi-activo en un solo lugar.
       </motion.p>
 
-      {/* Tarjeta hero: flota en bucle, sin interacción */}
-      <motion.section variants={item} aria-label="Tu tarjeta USDT" className="mt-8">
+      {/* Abanico hero: tres tarjetas en diagonal flotando en bucle, sin interacción */}
+      <motion.section variants={item} aria-label="Tus tarjetas USDT" className="mt-8">
         <motion.div
-          animate={reduced ? undefined : { y: [0, -6, 0], rotate: [0, 1.5, 0, -1.5, 0] }}
+          animate={reduced ? undefined : { y: [0, -7, 0] }}
           transition={reduced ? undefined : { duration: 6, ease: 'easeInOut', repeat: Infinity }}
-          className="pointer-events-none mx-auto w-[80%] [perspective:1000px]"
+          className="pointer-events-none relative mx-auto h-[264px] w-[76%]"
         >
-          <CardFace card={hero} skin={tetherSkin()} />
+          {CARDS.slice(0, FAN_LAYERS.length)
+            .map((card, i) => ({ card, layer: FAN_LAYERS[i]! }))
+            .reverse()
+            .map(({ card, layer }) => (
+              <div
+                key={card.id}
+                className="absolute inset-x-0 top-0"
+                style={{
+                  transform: `rotate(${layer.tilt}deg) translate(${layer.x}px, ${layer.y}px)`,
+                  zIndex: layer.z,
+                  filter: layer.filter,
+                }}
+              >
+                <CardFace card={card} skin={CARD_SKIN} />
+              </div>
+            ))}
         </motion.div>
       </motion.section>
 

@@ -1,12 +1,10 @@
 import type { CSSProperties } from 'react'
 
 /**
- * Skin Tether único para todas las tarjetas. El acento del sistema sigue siendo
- * teal: el verde vive solo en la tarjeta.
+ * Skin común de las tarjetas: vidrio ahumado con borde hairline claro y un halo
+ * rojizo muy sutil. El verde vive solo en el logo de Tether.
  */
-export function tetherSkin(): CSSProperties {
-  return {
-    border: '1px solid color-mix(in srgb, #108852 60%, transparent)',
-    boxShadow: '0 0 70px -18px rgb(16 133 82 / 0.55)',
-  }
+export const CARD_SKIN: CSSProperties = {
+  border: '1px solid rgb(255 255 255 / 0.12)',
+  boxShadow: '0 0 60px -22px rgb(229 72 77 / 0.5)',
 }
