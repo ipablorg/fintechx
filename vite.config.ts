@@ -9,6 +9,8 @@ const { version } = require('./package.json') as { version: string }
 
 // https://vite.dev/config/
 export default defineConfig({
+  // Rutas relativas: el mismo build sirve en local y en GitHub Pages (subpath del proyecto).
+  base: './',
   plugins: [react(), tailwindcss()],
   define: {
     __APP_VERSION__: JSON.stringify(version),
