@@ -15,11 +15,6 @@ const units = new Intl.NumberFormat(LOCALE, {
   maximumFractionDigits: 4,
 })
 
-const numberCompact = new Intl.NumberFormat(LOCALE, {
-  notation: 'compact',
-  maximumFractionDigits: 1,
-})
-
 const pct = new Intl.NumberFormat(LOCALE, {
   style: 'percent',
   maximumFractionDigits: 1,
@@ -40,19 +35,11 @@ export function formatUnits(value: number): string {
   return units.format(value)
 }
 
-/** Ticks de eje: compacto para miles ($26 k), entero para valores chicos. */
-export function formatTick(value: number): string {
-  const sign = value < 0 ? '-' : ''
-  const abs = Math.abs(value)
-  if (abs >= 1000) return `${sign}$${numberCompact.format(abs)}`
-  return money.format(value).replace(/[.,]00$/, '')
-}
-
 export function formatPct(value: number): string {
   return pct.format(value)
 }
 
-/** Porcentaje sin signo (LTV, APR). */
+/** Porcentaje sin signo (LTV, APR, uso del límite). */
 export function formatRate(value: number): string {
   return rate.format(value)
 }

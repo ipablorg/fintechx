@@ -1,27 +1,4 @@
-import { CARDS, DAYS, PORTFOLIO_HISTORY, TODAY, type CardProduct, type HistoryPoint } from './mock'
-
-export type BalancePoint = HistoryPoint
-
-export type Delta = { abs: number; pct: number | null }
-
-export const PORTFOLIO_RANGE_DAYS = 30
-
-/** Corte del portafolio: serie diaria del rango, total actual y variación. */
-export function derivePortfolio(rangeDays = PORTFOLIO_RANGE_DAYS) {
-  const points = PORTFOLIO_HISTORY.slice(DAYS + 1 - rangeDays)
-  const total = points[points.length - 1]?.value ?? 0
-  const first = points[0]?.value ?? 0
-
-  return {
-    rangeDays,
-    points,
-    total,
-    delta: {
-      abs: total - first,
-      pct: first !== 0 ? (total - first) / Math.abs(first) : null,
-    } satisfies Delta,
-  }
-}
+import { CARDS, TODAY, type CardProduct } from './mock'
 
 const MAX_CARD_TXNS = 8
 

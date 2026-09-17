@@ -1,4 +1,4 @@
-import { Sparkles } from 'lucide-react'
+import { ArrowLeft, Sparkles } from 'lucide-react'
 import { motion, type Variants } from 'motion/react'
 
 import { LOAN_OFFERS } from '@/data/mock'
@@ -15,10 +15,19 @@ const item: Variants = {
 }
 
 /** Créditos respaldados por activos digitales: recibes stablecoins, dejas colateral. */
-export function LoansView() {
+export function LoansView({ onBack }: { onBack: () => void }) {
   return (
     <motion.div variants={container} initial="hidden" animate="show" exit={{ opacity: 0, y: -10, transition: { duration: 0.16 } }}>
       <motion.div variants={item} className="mb-4 px-1">
+        <button
+          type="button"
+          onClick={onBack}
+          aria-label="Volver al inicio"
+          className="mb-3 inline-flex cursor-pointer items-center gap-1.5 text-sm text-ink-2 transition-colors hover:text-ink"
+        >
+          <ArrowLeft size={16} strokeWidth={2} />
+          Volver
+        </button>
         <h1 className="title-large">Créditos</h1>
         <p className="mt-1 text-xs text-ink-3">Recibe stablecoins hoy y deja tus activos como garantía, sin venderlos.</p>
       </motion.div>

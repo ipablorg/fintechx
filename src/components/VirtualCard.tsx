@@ -4,7 +4,8 @@ import { useId, useState, type CSSProperties, type ReactNode } from 'react'
 
 import baLogo from '@/assets/ba-logo-white.png'
 import tetherWhite from '@/assets/tether-white.svg'
-import type { CardProduct } from '@/data/mock'
+import type { CardLimit, CardProduct } from '@/data/mock'
+import { formatMoney, formatRate } from '@/lib/format'
 
 const ENTRANCE = { duration: 2.2, ease: 'easeInOut' as const, delay: 0.35 }
 
@@ -119,16 +120,25 @@ function FrontContent({ card, revealed, chipId, noiseId }: { card: CardProduct; 
     <>
       <Noise id={noiseId} />
 
-      <div className="relative flex h-full flex-col justify-between p-[5.5cqw]">
-        {/* Franja de identificación: logo Tether, nombre en negrita y últimos cuatro */}
+      <div className="relative flex h-full flex-col justify-between px-[5.5cqw] pt-[3.2cqw] pb-[5.5cqw]">
+        {/* Franja de identificación: logo Tether, activo, descriptor y últimos cuatro */}
         <div className="flex items-center justify-between gap-3">
-          <span className="flex items-center gap-[2cqw]">
+          <span className="flex min-w-0 items-center gap-[2cqw]">
             <img src={tetherWhite} alt="" className="h-[5.6cqw] w-auto" />
-            <span className="text-[min(4.6cqw,18px)] font-bold tracking-[0.04em] text-white" style={embossed}>
-              {card.asset}
+            <span className="text-[min(4.6cqw,18px)] leading-none font-bold tracking-[0.04em] text-white" style={embossed}>
+              USDT
+            </span>
+            <span
+              className="truncate text-[min(3.1cqw,12px)] leading-none font-medium tracking-[0.06em] text-white/70"
+              style={embossed}
+            >
+              {card.descriptor}
             </span>
           </span>
-          <span className="text-[min(3.8cqw,15px)] font-semibold text-white/85 tabular-nums" style={embossed}>
+          <span
+            className="shrink-0 text-[min(3.8cqw,15px)] leading-none font-semibold text-white/85 tabular-nums"
+            style={embossed}
+          >
             •••• {card.last4}
           </span>
         </div>
@@ -186,7 +196,7 @@ export function CardFace({
 
   return (
     <div
-      className={`relative aspect-[1.586] w-full overflow-hidden rounded-2xl bg-page ${className}`}
+      className={`@container relative aspect-[1.586] w-full overflow-hidden rounded-2xl bg-page ${className}`}
       style={{ ...skin, ...style }}
     >
       <div aria-hidden="true" className="absolute inset-0" style={{ background: TETHER_WASH }} />
@@ -202,6 +212,8 @@ export function CardFace({
 
 type Props = {
   card: CardProduct
+  /** Consumo y tope del mes en curso: alimentan el reverso. */
+  limit: CardLimit
   /** Estado de volteo controlado desde la vista (botón "Ver reverso"). */
   flipped?: boolean
   frozen?: boolean
@@ -215,9 +227,47 @@ type Props = {
   id?: string
 }
 
+/** Bloque de límite mensual del reverso: barra de progreso, consumo y tope. */
+function LimitBody({ spent, total }: CardLimit) {
+  const ratio = Math.min(1, spent / total)
+
+  return (
+    <div>
+      <div className="flex items-baseline justify-between gap-2">
+        <p className="text-[min(2.6cqw,10px)] tracking-[0.14em] text-white/60 uppercase" style={embossed}>
+          Límite mensual
+        </p>
+        <p className="text-[min(3.2cqw,13px)] font-semibold text-white tabular-nums">{formatRate(ratio)}</p>
+      </div>
+
+      <p className="mt-[0.8cqw] text-[min(4.4cqw,17px)] font-bold text-white tabular-nums" style={embossed}>
+        {formatMoney(spent)} <span className="text-[min(3cqw,12px)] font-medium text-white/70">de {formatMoney(total)}</span>
+      </p>
+
+      <div
+        className="mt-[2.4cqw] me-[16cqw] h-[2.4cqw] overflow-hidden rounded-full bg-black/35"
+        role="meter"
+        aria-valuenow={Math.round(ratio * 100)}
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-valuetext={`${formatMoney(spent)} de ${formatMoney(total)}`}
+        aria-label="Uso del límite mensual"
+      >
+        <motion.div
+          className="h-full rounded-full bg-white/90"
+          initial={{ width: 0 }}
+          animate={{ width: `${ratio * 100}%` }}
+          transition={{ type: 'spring', stiffness: 90, damping: 20 }}
+        />
+      </div>
+    </div>
+  )
+}
+
 /** Tarjeta virtual 3D de la pila: giro de entrada, tilt con puntero y flip manual. */
 export function VirtualCard({
   card,
+  limit,
   flipped = false,
   frozen = false,
   revealed = false,
@@ -277,7 +327,7 @@ export function VirtualCard({
             </div>
           </Face>
 
-          {/* Reverso (pre-rotado 180°) */}
+          {/* Reverso (pre-rotado 180°): pista magnética, límite mensual y co-brand */}
           <Face frozen={frozen} back skin={skin} covered={spun && !flipped}>
             <Noise id={`${noiseId}-b`} />
 
@@ -285,17 +335,20 @@ export function VirtualCard({
               {/* Pista magnética */}
               <div aria-hidden="true" className="mt-[6.5cqw] h-[12cqw] w-full bg-black/85" />
 
-              <div className="flex flex-1 flex-col justify-between p-[5.5cqw] pe-[15cqw]">
+              <div className="flex flex-1 flex-col justify-between p-[5.5cqw]">
                 <div className="flex items-center gap-3">
-                  <span className="flex h-[8.5cqw] flex-1 items-center justify-end rounded-sm bg-white/90 px-[2cqw] text-[min(3.6cqw,14px)] italic text-black/60">
+                  <span className="flex h-[7.5cqw] flex-1 items-center justify-end rounded-sm bg-white/90 px-[2cqw] text-[min(3.2cqw,13px)] italic text-black/60">
                     {card.holder}
                   </span>
-                  <span className="rounded-sm bg-white/90 px-[2cqw] py-[1.4cqw] text-[min(3.6cqw,14px)] font-semibold text-black tabular-nums">
+                  <span className="rounded-sm bg-white/90 px-[2cqw] py-[1.2cqw] text-[min(3.2cqw,13px)] font-semibold text-black tabular-nums">
                     {card.cvv}
                   </span>
                 </div>
 
-                <div className="flex items-end justify-between gap-3">
+                <LimitBody spent={limit.spent} total={limit.total} />
+
+                {/* El co-brand se despeja del botón de volteo con padding derecho */}
+                <div className="flex items-end justify-between gap-3 pe-[15cqw]">
                   <img src={baLogo} alt="Banco Amazonas" className="h-[5.5cqw] w-auto" />
                   <p className="text-[min(3cqw,12px)] text-white/65" style={embossed}>
                     powered by <span className="font-semibold text-white">Banco Amazonas</span>

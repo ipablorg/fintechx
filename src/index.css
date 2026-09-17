@@ -116,3 +116,39 @@ body {
 @utility headline {
   @apply text-[16px] leading-snug font-semibold;
 }
+
+/*
+ * Texto con brillo en bucle: llamado a la acción del deslizador de saldos.
+ * El movimiento vive en CSS (no Motion) para poder cortarlo por media query.
+ */
+.shimmer-text {
+  background-image: linear-gradient(
+    100deg,
+    var(--color-ink-3) 38%,
+    var(--color-ink) 50%,
+    var(--color-ink-3) 62%
+  );
+  background-size: 240% 100%;
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+  animation: shimmer-slide 2.6s linear infinite;
+}
+
+@keyframes shimmer-slide {
+  from {
+    background-position: 130% 0;
+  }
+  to {
+    background-position: -130% 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .shimmer-text {
+    animation: none;
+    background-image: none;
+    color: var(--color-ink-2);
+  }
+}
+

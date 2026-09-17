@@ -2,9 +2,6 @@ import bitcoinUrl from '@/assets/bitcoin.svg'
 import tetherUrl from '@/assets/tether.svg'
 import usdcoinUrl from '@/assets/usdcoin.svg'
 
-/** Punto de una serie temporal de valor en USD. */
-export type HistoryPoint = { date: Date; value: number }
-
 export type Asset = {
   id: 'usdt' | 'usdc' | 'btc'
   name: string
@@ -38,12 +35,17 @@ export type CardTxn = {
   amount: number
 }
 
-/** Tarjeta virtual tokenizada, una por activo. */
+/** Consumo y tope del mes en curso: alimenta el reverso de la tarjeta. */
+export type CardLimit = { spent: number; total: number }
+
+/**
+ * Tarjeta virtual tokenizada. Las tres liquidan en USDT (logo Tether + "USDT"
+ * en todas las caras) y se distinguen por sus últimos cuatro y su descriptor.
+ */
 export type CardProduct = {
-  id: 'card-usdt' | 'card-usdc' | 'card-btc'
-  /** Activo que liquida la tarjeta; color e icono vienen de ASSETS. */
-  assetId: Asset['id']
-  asset: string
+  id: 'card-principal' | 'card-ahorro' | 'card-compras'
+  /** Alias corto que distingue la tarjeta dentro de la pila. */
+  descriptor: 'Principal' | 'Ahorro' | 'Compras'
   number: string
   holder: string
   expiry: string
@@ -137,17 +139,11 @@ export function daysAgo(n: number): Date {
   return d
 }
 
-/** Activos que liquidan las tarjetas: color e icono viven solo en ASSETS. */
-export function getAsset(id: Asset['id']): Asset {
-  return ASSETS.find((a) => a.id === id) ?? ASSETS[0]!
-}
-
-/** Tarjetas tokenizadas del usuario, una por activo, con su propia historia. */
+/** Tarjetas tokenizadas del usuario: todas USDT, cada una con su propia historia. */
 export const CARDS: CardProduct[] = [
   {
-    id: 'card-usdt',
-    assetId: 'usdt',
-    asset: 'USDT',
+    id: 'card-principal',
+    descriptor: 'Principal',
     number: '4213 7712 3345 8391',
     holder: 'PABLO B.',
     expiry: '09/29',
@@ -170,9 +166,8 @@ export const CARDS: CardProduct[] = [
     ],
   },
   {
-    id: 'card-usdc',
-    assetId: 'usdc',
-    asset: 'USDC',
+    id: 'card-ahorro',
+    descriptor: 'Ahorro',
     number: '5187 9042 6613 2204',
     holder: 'PABLO B.',
     expiry: '04/28',
@@ -192,9 +187,8 @@ export const CARDS: CardProduct[] = [
     ],
   },
   {
-    id: 'card-btc',
-    assetId: 'btc',
-    asset: 'BTC',
+    id: 'card-compras',
+    descriptor: 'Compras',
     number: '6042 1187 5590 4476',
     holder: 'PABLO B.',
     expiry: '11/27',
@@ -228,17 +222,6 @@ export type LoanOffer = {
   featured?: boolean
 }
 
-export const DAYS = 90
-
-/** Valor total del portafolio en USD (suma de los activos). */
-const TOTAL_USD = ASSETS.reduce((acc, a) => acc + a.usdValue, 0)
-
-/** Serie diaria del portafolio: DAYS+1 puntos, del día -DAYS a hoy. */
-export const PORTFOLIO_HISTORY: HistoryPoint[] = (() => {
-  const points = walk(7, TOTAL_USD, 0.0042, DAYS + 1)
-  return points.map((value, i) => ({ date: daysAgo(DAYS - i), value }))
-})()
-
 /** PRNG determinista (mulberry32): misma historia financiera en cada carga. */
 function mulberry32(seed: number) {
   let a = seed
@@ -253,7 +236,7 @@ function mulberry32(seed: number) {
 
 /**
  * Random walk determinista que termina exactamente en `end`, con deriva diaria
- * `drift` (fracción, ej. -0.018 = -1.8 %/día). Sirve sparks e historial.
+ * `drift` (fracción, ej. -0.018 = -1.8 %/día). Sirve las sparklines de fila.
  */
 function walk(seed: number, end: number, drift: number, points = 14): number[] {
   const rand = mulberry32(seed)

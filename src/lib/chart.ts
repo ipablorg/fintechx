@@ -1,19 +1,5 @@
 export type Pt = { x: number; y: number }
 
-/** Ticks "bonitos" (pasos 1/2/5×10ⁿ) que cubren [min, max]. */
-export function niceTicks(min: number, max: number, count = 4): number[] {
-  if (min === max) max = min + 1
-  const span = max - min
-  const rawStep = span / count
-  const mag = 10 ** Math.floor(Math.log10(rawStep))
-  const norm = rawStep / mag
-  const step = (norm >= 7 ? 10 : norm >= 3 ? 5 : norm >= 1.5 ? 2 : 1) * mag
-  const start = Math.ceil(min / step) * step
-  const ticks: number[] = []
-  for (let v = start; v <= max + step * 1e-6; v += step) ticks.push(v)
-  return ticks
-}
-
 const f = (n: number) => n.toFixed(2)
 
 /**
@@ -62,17 +48,4 @@ export function monotonePath(pts: Pt[]): string {
     d += `C${f(c1x)},${f(c1y)} ${f(c2x)},${f(c2y)} ${f(b.x)},${f(b.y)}`
   }
   return d
-}
-
-/** Área bajo la curva monótona, cerrada contra la línea base. */
-export function areaPath(pts: Pt[], baselineY: number): string {
-  if (pts.length === 0) return ''
-  const line = monotonePath(pts)
-  const last = pts[pts.length - 1]!
-  const first = pts[0]!
-  return `${line}L${f(last.x)},${f(baselineY)}L${f(first.x)},${f(baselineY)}Z`
-}
-
-export function clamp(v: number, min: number, max: number): number {
-  return Math.min(max, Math.max(min, v))
 }
