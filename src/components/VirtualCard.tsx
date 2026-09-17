@@ -135,7 +135,8 @@ function FrontContent({ card, revealed, chipId, noiseId }: { card: CardProduct; 
           </span>
         </div>
 
-        <p className="text-[clamp(15px,5.4cqw,23px)] font-medium tracking-[0.16em] text-white tabular-nums" style={embossed}>
+        {/* Sin piso en px: la misma cara debe poder encogerse a miniatura */}
+        <p className="text-[min(5.4cqw,23px)] font-medium tracking-[0.16em] text-white tabular-nums" style={embossed}>
           {revealed ? card.number : masked}
         </p>
 

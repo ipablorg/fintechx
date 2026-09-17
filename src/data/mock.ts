@@ -56,24 +56,32 @@ export type CardProduct = {
   activity: CardTxn[]
 }
 
-/** Contacto frecuente: avatar de iniciales con color propio (no hay fotos). */
+/** Contacto frecuente: foto local con iniciales y color como respaldo. */
 export type Contact = {
   id: string
   name: string
   initials: string
   color: string
+  /** Rostro servido desde /public; si falla la carga, Avatar cae a iniciales. */
+  avatar: string
 }
 
 /** Fuente única de contactos: acciones rápidas de Inicio y Enviar dinero. */
 export const CONTACTS: Contact[] = [
-  { id: 'c-marta', name: 'Marta Ríos', initials: 'MR', color: '#e5484d' },
-  { id: 'c-diego', name: 'Diego Paredes', initials: 'DP', color: '#2775ca' },
-  { id: 'c-lucia', name: 'Lucía Ferrer', initials: 'LF', color: '#f7931a' },
-  { id: 'c-andres', name: 'Andrés Silva', initials: 'AS', color: '#8e8e99' },
+  { id: 'c-marta', name: 'Marta Ríos', initials: 'MR', color: '#e5484d', avatar: '/avatars/a2.jpg' },
+  { id: 'c-diego', name: 'Diego Paredes', initials: 'DP', color: '#2775ca', avatar: '/avatars/a3.jpg' },
+  { id: 'c-lucia', name: 'Lucía Ferrer', initials: 'LF', color: '#f7931a', avatar: '/avatars/a4.jpg' },
+  { id: 'c-andres', name: 'Andrés Silva', initials: 'AS', color: '#8e8e99', avatar: '/avatars/a5.jpg' },
 ]
 
 /** Usuario de la demo: perfil de Inicio y Ajustes. */
-export const USER = { name: 'Pablo', email: 'pablo@loopay.com', initials: 'PB', color: '#c00d0d' }
+export const USER = {
+  name: 'Pablo',
+  email: 'pablo@loopay.com',
+  initials: 'PB',
+  color: '#c00d0d',
+  avatar: '/avatars/a1.jpg',
+}
 
 export const ASSETS: Asset[] = [
   {

@@ -91,7 +91,7 @@ export function SendMoneyView({ contactId, onDone }: Props) {
             aria-haspopup="dialog"
             className="glass flex cursor-pointer items-center gap-2 rounded-full py-1.5 pl-1.5 pr-2.5"
           >
-            <Avatar initials={contact.initials} color={contact.color} className="size-7" />
+            <Avatar src={contact.avatar} initials={contact.initials} color={contact.color} className="size-7" />
             <span className="text-xs text-ink">Enviar a {contact.name.split(' ')[0]}</span>
             <ChevronDown size={14} strokeWidth={1.8} className="text-ink-3" />
           </button>
@@ -187,7 +187,7 @@ export function SendMoneyView({ contactId, onDone }: Props) {
                       aria-pressed={selected}
                       className="glass flex w-full cursor-pointer items-center gap-3 rounded-full p-2 pr-4 text-left"
                     >
-                      <Avatar initials={c.initials} color={c.color} className="size-9" />
+                      <Avatar src={c.avatar} initials={c.initials} color={c.color} className="size-9" />
                       <span className="flex-1 text-sm text-ink">{c.name}</span>
                       {selected && <Check size={16} strokeWidth={2.2} className="text-white" />}
                     </button>

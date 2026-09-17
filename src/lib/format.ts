@@ -30,6 +30,17 @@ export function formatMoney(value: number): string {
   return money.format(value)
 }
 
+/** Monto partido para el bloque de saldo: parte entera y centavos con su separador. */
+export function formatMoneyParts(value: number): { whole: string; cents: string } {
+  const parts = money.formatToParts(value)
+  const cut = parts.findIndex((p) => p.type === 'decimal')
+  if (cut < 0) return { whole: money.format(value), cents: '' }
+  return {
+    whole: parts.slice(0, cut).map((p) => p.value).join(''),
+    cents: parts.slice(cut).map((p) => p.value).join(''),
+  }
+}
+
 /** Cantidad en unidades del activo (USDT, USDC, BTC…), sin símbolo de moneda. */
 export function formatUnits(value: number): string {
   return units.format(value)

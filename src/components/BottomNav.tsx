@@ -13,9 +13,11 @@ const TABS: Array<{ id: Tab; label: string; icon: LucideIcon }> = [
 const PILL_SPRING = { type: 'spring', stiffness: 420, damping: 34 } as const
 
 /**
- * Navegación inferior: cuatro pestañas con iconos finos y label chico; la
- * activa viaja dentro de un pill resaltado que se mueve con muelle (layoutId).
- * Enviar entra como pantalla sobre la pestaña activa y no vive aquí.
+ * Navegación inferior: cápsula flotante de vidrio separada de los bordes, con
+ * cuatro pestañas de icono fino y label chico. La activa viaja dentro de un
+ * pill translúcido que se mueve con muelle (layoutId): vidrio sobre vidrio, sin
+ * relleno sólido ni acento de color. Enviar entra como pantalla sobre la
+ * pestaña activa y no vive aquí.
  */
 export function BottomNav({ view, onChange }: { view: Tab; onChange: (v: Tab) => void }) {
   return (
@@ -24,9 +26,9 @@ export function BottomNav({ view, onChange }: { view: Tab; onChange: (v: Tab) =>
         aria-label="Navegación"
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0, transition: { delay: 0.25, duration: 0.3 } }}
-        className="fixed inset-x-0 bottom-0 z-30 rounded-t-3xl border-t border-white/10 bg-[#101117]/85 pb-[env(safe-area-inset-bottom)] backdrop-blur-2xl"
+        className="fixed inset-x-3.5 bottom-[calc(env(safe-area-inset-bottom)+10px)] z-30 mx-auto max-w-md rounded-full border border-white/[0.08] bg-black/70 shadow-[0_18px_40px_-18px_rgb(0_0_0/0.8)] backdrop-blur-xl"
       >
-        <div className="mx-auto grid max-w-md grid-cols-4 px-3 py-2">
+        <div className="grid grid-cols-4 gap-1 p-1.5">
           {TABS.map(({ id, label, icon: Icon }) => {
             const active = view === id
             return (
@@ -35,16 +37,16 @@ export function BottomNav({ view, onChange }: { view: Tab; onChange: (v: Tab) =>
                 type="button"
                 aria-current={active ? 'page' : undefined}
                 onClick={() => onChange(id)}
-                className="relative flex cursor-pointer flex-col items-center gap-0.5 rounded-full py-1.5 text-[10px] font-medium text-ink-2 transition-colors hover:text-ink aria-[current=page]:text-white"
+                className="relative flex cursor-pointer flex-col items-center gap-1 rounded-full py-2 text-[11px] leading-none font-medium text-ink-2 transition-colors hover:text-ink aria-[current=page]:text-white"
               >
                 {active && (
                   <motion.span
                     layoutId="nav-pill"
                     transition={PILL_SPRING}
-                    className="absolute inset-0 rounded-2xl border border-white/15 bg-white/[0.08] shadow-[inset_0_1px_0_rgb(255_255_255/0.08)]"
+                    className="absolute inset-0 rounded-full border border-white/10 bg-white/[0.06]"
                   />
                 )}
-                <Icon size={19} strokeWidth={1.5} className="relative z-10" />
+                <Icon size={20} strokeWidth={1.5} className="relative z-10" />
                 <span className="relative z-10">{label}</span>
               </button>
             )

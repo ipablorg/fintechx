@@ -34,7 +34,7 @@ export function SettingsView({ onLogout }: { onLogout: () => void }) {
 
       {/* Perfil */}
       <motion.section variants={item} className="glass flex items-center gap-3 rounded-3xl p-4" aria-label="Perfil">
-        <Avatar initials={USER.initials} color={USER.color} className="size-12 text-sm" />
+        <Avatar src={USER.avatar} initials={USER.initials} color={USER.color} className="size-12 text-sm" />
         <div className="min-w-0">
           <p className="headline">{USER.name}</p>
           <p className="truncate text-xs text-ink-3">{USER.email}</p>

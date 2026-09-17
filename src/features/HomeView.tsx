@@ -1,4 +1,4 @@
-import { ArrowDownLeft, ArrowUpRight, Bell, ChevronRight, Eye, EyeOff, MoreHorizontal, Plus, Send, type LucideIcon } from 'lucide-react'
+import { ArrowDownLeft, ArrowUpRight, Bell, ChevronDown, Eye, EyeOff, LayoutGrid, MoreHorizontal, Plus, Send, type LucideIcon } from 'lucide-react'
 import { AnimatePresence, motion, type Variants } from 'motion/react'
 import { useState } from 'react'
 
@@ -11,7 +11,10 @@ import { TxnList } from '@/components/TxnRow'
 import { ASSETS, CARDS, CONTACTS, USER, type CardProduct, type Contact } from '@/data/mock'
 import { byDateDesc, totalPortfolioUsd } from '@/data/derive'
 import { CARD_SKIN } from '@/data/skin'
-import { formatMoney } from '@/lib/format'
+import { formatMoneyParts } from '@/lib/format'
+
+/* Tipografía del monto gigante: entera en blanco, centavos atenuados. */
+const AMOUNT = 'text-[44px] leading-none font-bold tracking-[-0.03em] tabular-nums'
 
 const container: Variants = {
   hidden: {},
@@ -69,46 +72,56 @@ export function HomeView({ activeId, onOpenCards, onSend }: Props) {
 
   return (
     <motion.div variants={container} initial="hidden" animate="show" exit={{ opacity: 0, y: -10, transition: { duration: 0.16 } }}>
-      {/* Header propio de la vista: perfil, plan y notificaciones */}
-      <motion.header variants={item} className="flex items-center justify-between">
-        <div className="flex items-center gap-2.5">
-          <Avatar initials={USER.initials} color={USER.color} className="size-9" />
-          <span className="rounded-full border border-white/10 bg-white/[0.05] px-3 py-1 text-xs text-ink-2">Personal</span>
+      {/* Header propio de la vista: menú, plan con foto y notificaciones */}
+      <motion.header variants={item} className="grid grid-cols-[auto_1fr_auto] items-center gap-2">
+        <div aria-hidden="true" className="glass grid size-9 place-items-center rounded-2xl text-ink-2">
+          <LayoutGrid size={16} strokeWidth={1.5} />
         </div>
+
+        <div className="flex justify-center">
+          <span className="glass flex items-center gap-2 rounded-full py-1 pr-2.5 pl-1">
+            <Avatar src={USER.avatar} initials={USER.initials} color={USER.color} className="size-7" />
+            <span className="text-xs text-ink">Personal</span>
+            <span aria-hidden="true" className="size-1.5 rounded-full bg-white/45" />
+          </span>
+        </div>
+
         <motion.button
           type="button"
-          aria-label="Notificaciones"
+          aria-label="Notificaciones, hay novedades"
           whileTap={{ scale: 0.92 }}
           transition={{ type: 'spring', stiffness: 500, damping: 30 }}
-          className="glass grid size-9 cursor-pointer place-items-center rounded-full text-ink-2"
+          className="glass relative grid size-9 cursor-pointer place-items-center rounded-full text-ink-2"
         >
           <Bell size={16} strokeWidth={1.5} />
+          {/* Punto de estado en verde semántico (--color-up) */}
+          <span aria-hidden="true" className="absolute top-1.5 right-1.5 size-2 rounded-full bg-up" />
         </motion.button>
       </motion.header>
 
-      {/* Saldo disponible: monto gigante con ojo y chip de la tarjeta activa */}
-      <motion.section variants={item} className="mt-6" aria-label="Saldo disponible">
-        <div className="flex items-start justify-between gap-3 px-1">
-          <p className="pt-1 text-sm text-ink-2">Saldo disponible</p>
+      {/* Saldo disponible: selector de tarjeta y monto gigante, ambos centrados */}
+      <motion.section variants={item} className="mt-8 text-center" aria-label="Saldo disponible">
+        <button
+          type="button"
+          onClick={onOpenCards}
+          aria-label={`Ver tarjetas, activa USDT ${active.descriptor} •••• ${active.last4}`}
+          className="mx-auto flex cursor-pointer items-center justify-center gap-1.5 rounded-full py-1 pr-1.5 pl-2 transition-colors hover:bg-white/[0.04]"
+        >
+          <span className="text-[15px] text-ink-2">Saldo disponible</span>
+          <span className="block w-[30px]">
+            <CardFace card={active} skin={CARD_SKIN} style={{ borderRadius: 4 }} />
+          </span>
+          <ChevronDown size={14} strokeWidth={2} className="text-ink-3" />
+        </button>
 
-          <button
-            type="button"
-            onClick={onOpenCards}
-            aria-label={`Ver tarjetas, activa USDT ${active.descriptor} •••• ${active.last4}`}
-            className="glass flex cursor-pointer items-center gap-2 rounded-full py-1.5 pl-1.5 pr-2"
-          >
-            <span className="block w-14">
-              <CardFace card={active} skin={CARD_SKIN} style={{ borderRadius: 8 }} />
-            </span>
-            <ChevronRight size={14} strokeWidth={2} className="text-ink-3" />
-          </button>
-        </div>
-
-        <div className="mt-1 flex items-center gap-2 px-1">
+        <div className="mt-4 flex items-center justify-center gap-2">
           {hidden ? (
-            <span className="title-large">$••••••</span>
+            <span className={AMOUNT}>$••••••</span>
           ) : (
-            <AnimatedNumber value={total} format={formatMoney} className="title-large" />
+            <>
+              <AnimatedNumber value={total} format={(v) => formatMoneyParts(v).whole} className={AMOUNT} />
+              <AnimatedNumber value={total} format={(v) => formatMoneyParts(v).cents} className={`${AMOUNT} text-ink-3`} />
+            </>
           )}
           <button
             type="button"
@@ -122,7 +135,7 @@ export function HomeView({ activeId, onOpenCards, onSend }: Props) {
         </div>
       </motion.section>
 
-      {/* Tiles 2×2 de vidrio */}
+      {/* Tiles 2×2: vidrio neutro, el color les llega del fondo por el blur */}
       <motion.section variants={item} className="mt-6 grid grid-cols-2 gap-3" aria-label="Acciones">
         {TILES.map(({ id, label, icon: Icon }) => (
           <motion.button
@@ -131,7 +144,7 @@ export function HomeView({ activeId, onOpenCards, onSend }: Props) {
             onClick={() => openTile(id)}
             whileTap={{ scale: 0.96 }}
             transition={{ type: 'spring', stiffness: 500, damping: 30 }}
-            className="glass flex cursor-pointer flex-col gap-6 rounded-3xl p-4 text-left"
+            className="flex cursor-pointer flex-col gap-6 rounded-3xl border border-white/[0.08] bg-white/[0.04] p-4 text-left backdrop-blur-xl"
           >
             <Icon size={20} strokeWidth={1.5} className="text-ink-2" />
             <span className="text-sm text-ink">{label}</span>
@@ -161,7 +174,7 @@ export function HomeView({ activeId, onOpenCards, onSend }: Props) {
               onClick={() => onSend(contact.id)}
               className="flex w-14 shrink-0 cursor-pointer flex-col items-center gap-1.5"
             >
-              <Avatar initials={contact.initials} color={contact.color} className="size-12" />
+              <Avatar src={contact.avatar} initials={contact.initials} color={contact.color} className="size-12" />
               <span className="truncate text-[11px] text-ink-3">{contact.name.split(' ')[0]}</span>
             </button>
           ))}

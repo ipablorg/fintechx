@@ -88,7 +88,8 @@ export default function App() {
             exit={{ opacity: 0, transition: { duration: 0.2 } }}
           >
             {/* Columna tipo teléfono: el fondo de página sigue de borde a borde */}
-            <div className="mx-auto w-full max-w-md px-4 pt-[calc(env(safe-area-inset-top)+20px)] pb-32">
+            {/* El padding inferior despeja la cápsula de navegación flotante */}
+            <div className="mx-auto w-full max-w-md px-4 pt-[calc(env(safe-area-inset-top)+20px)] pb-[calc(env(safe-area-inset-bottom)+104px)]">
               <AnimatePresence mode="wait">
                 {tab === 'inicio' && (
                   <HomeView key="inicio" activeId={activeId} onOpenCards={() => setView('tarjetas')} onSend={openSend} />
