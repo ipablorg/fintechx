@@ -2,7 +2,9 @@ import { motion } from 'motion/react'
 
 const KNOB_SPRING = { type: 'spring', stiffness: 500, damping: 32 } as const
 
-// ponytail: espejos de --color-page y --color-ink-2 (backgroundColor animado no lee tokens).
+// ponytail: espejos de --color-page; el perillo apagado conserva a propósito el
+// gris viejo de la tinta (backgroundColor animado no lee tokens y, si fuera
+// blanco, el estado apagado no se distinguiría de la pista activa).
 const KNOB_ON = '#0c0d13'
 const KNOB_OFF = '#a39fab'
 

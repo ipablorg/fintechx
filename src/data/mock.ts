@@ -2,12 +2,16 @@ import bitcoinUrl from '@/assets/bitcoin.svg'
 import tetherUrl from '@/assets/tether.svg'
 import usdcoinUrl from '@/assets/usdcoin.svg'
 
+export type AssetId = 'usdt' | 'usdc' | 'btc'
+
 export type Asset = {
-  id: 'usdt' | 'usdc' | 'btc'
+  id: AssetId
   name: string
   symbol: string
+  /** Saldo en unidades del activo (no en USD). */
   balance: number
-  usdValue: number
+  /** Precio de referencia en USD por unidad: todo monto de la UI vive en USD. */
+  priceUsd: number
   change24h: number
   /** Color de la marca del activo; espejo de los tokens --color-* de @theme. */
   color: string
@@ -16,26 +20,37 @@ export type Asset = {
   spark: number[]
 }
 
-/** Giro de un consumo con la tarjeta de crédito. */
-export type CardCategory =
+/** Dirección del movimiento: entra o sale dinero. */
+export type TxnKind = 'ingreso' | 'gasto'
+
+export type TxnCategory =
   | 'super'
   | 'restaurantes'
   | 'transporte'
   | 'suscripciones'
   | 'compras'
   | 'cafe'
+  | 'envio'
+  | 'recibido'
+  | 'deposito'
+  | 'retiro'
+  | 'conversion'
+  | 'credito'
 
-/** Movimiento de la tarjeta de crédito. */
-export type CardTxn = {
+/** Movimiento unificado del wallet: tarjeta, envíos, depósitos y créditos. */
+export type Txn = {
   id: string
   date: Date
-  merchant: string
-  category: CardCategory
-  /** Siempre negativo: la tarjeta solo gasta. */
+  kind: TxnKind
+  /** Monto en USD con signo: negativo sale, positivo entra. */
   amount: number
+  description: string
+  category: TxnCategory
+  asset: AssetId
+  /** Tarjeta que lo originó, si el movimiento nació de un consumo con tarjeta. */
+  cardId?: CardProduct['id']
 }
 
-/** Consumo y tope del mes en curso: alimenta el reverso de la tarjeta. */
 export type CardLimit = { spent: number; total: number }
 
 /** Red donde vive el token de la tarjeta: se muestra bajo los últimos cuatro. */
@@ -59,7 +74,6 @@ export type CardProduct = {
   last4: string
   /** Límite mensual en USD. */
   limit: number
-  activity: CardTxn[]
 }
 
 /** Contacto frecuente: foto local con iniciales y color como respaldo. */
@@ -70,15 +84,9 @@ export type Contact = {
   color: string
   /** Rostro servido desde /public; si falla la carga, Avatar cae a iniciales. */
   avatar: string
+  /** Alias o dirección del contacto, visible en el detalle. */
+  handle: string
 }
-
-/** Fuente única de contactos: acciones rápidas de Inicio y Enviar dinero. */
-export const CONTACTS: Contact[] = [
-  { id: 'c-marta', name: 'Marta Ríos', initials: 'MR', color: '#e5484d', avatar: '/avatars/a2.jpg' },
-  { id: 'c-diego', name: 'Diego Paredes', initials: 'DP', color: '#2775ca', avatar: '/avatars/a3.jpg' },
-  { id: 'c-lucia', name: 'Lucía Ferrer', initials: 'LF', color: '#f7931a', avatar: '/avatars/a4.jpg' },
-  { id: 'c-andres', name: 'Andrés Silva', initials: 'AS', color: '#8e8e99', avatar: '/avatars/a5.jpg' },
-]
 
 /** Usuario de la demo: perfil de Inicio y Ajustes. */
 export const USER = {
@@ -88,76 +96,6 @@ export const USER = {
   color: '#c00d0d',
   avatar: '/avatars/a1.jpg',
 }
-
-export const ASSETS: Asset[] = [
-  {
-    id: 'usdt',
-    name: 'Tether',
-    symbol: 'USDT',
-    balance: 4250.75,
-    usdValue: 4250.75,
-    change24h: 0.0002,
-    color: '#009393',
-    icon: tetherUrl,
-    spark: walk(11, 4250.75, 0.0002),
-  },
-  {
-    id: 'usdc',
-    name: 'USD Coin',
-    symbol: 'USDC',
-    balance: 1180.2,
-    usdValue: 1180.2,
-    change24h: 0.0001,
-    color: '#2775ca',
-    icon: usdcoinUrl,
-    spark: walk(23, 1180.2, 0.0001),
-  },
-  {
-    id: 'btc',
-    name: 'Bitcoin',
-    symbol: 'BTC',
-    balance: 0.0482,
-    usdValue: 5731.44,
-    change24h: -0.0184,
-    color: '#f7931a',
-    icon: bitcoinUrl,
-    spark: walk(37, 5731.44, -0.0184),
-  },
-]
-
-export const LOAN_OFFERS: LoanOffer[] = [
-  {
-    id: 'loan-usdt-btc',
-    asset: 'USDT',
-    collateral: 'BTC',
-    amountUsd: 5000,
-    ltv: 0.65,
-    apr: 0.089,
-    termMonths: 12,
-    monthlyUsd: 436.93,
-    featured: true,
-  },
-  {
-    id: 'loan-usdc-btc',
-    asset: 'USDC',
-    collateral: 'BTC',
-    amountUsd: 2500,
-    ltv: 0.5,
-    apr: 0.074,
-    termMonths: 6,
-    monthlyUsd: 425.74,
-  },
-  {
-    id: 'loan-usdt-usdc',
-    asset: 'USDT',
-    collateral: 'USDC',
-    amountUsd: 1800,
-    ltv: 0.8,
-    apr: 0.102,
-    termMonths: 9,
-    monthlyUsd: 208.59,
-  },
-]
 
 /** Ancla temporal de la demo: hoy a mediodía (evita sorpresas de DST). */
 export const TODAY = (() => {
@@ -170,6 +108,173 @@ export function daysAgo(n: number): Date {
   const d = new Date(TODAY)
   d.setDate(d.getDate() - n)
   return d
+}
+
+export const CONTACTS: Contact[] = [
+  { id: 'c-marta', name: 'Marta Ríos', initials: 'MR', color: '#e5484d', avatar: '/avatars/a2.jpg', handle: '@marta.rios' },
+  { id: 'c-diego', name: 'Diego Paredes', initials: 'DP', color: '#2775ca', avatar: '/avatars/a3.jpg', handle: 'TQd1ego…9kQ2' },
+  { id: 'c-lucia', name: 'Lucía Ferrer', initials: 'LF', color: '#f7931a', avatar: '/avatars/a4.jpg', handle: '@lucia.f' },
+  { id: 'c-andres', name: 'Andrés Silva', initials: 'AS', color: '#8e8e99', avatar: '/avatars/a5.jpg', handle: '0xAn4dres…f7A1' },
+]
+
+export const ASSETS: Asset[] = [
+  {
+    id: 'usdt',
+    name: 'Tether',
+    symbol: 'USDT',
+    balance: 4250.75,
+    priceUsd: 1,
+    change24h: 0.0002,
+    color: '#009393',
+    icon: tetherUrl,
+    spark: walk(11, 4250.75, 0.0002),
+  },
+  {
+    id: 'usdc',
+    name: 'USD Coin',
+    symbol: 'USDC',
+    balance: 1180.2,
+    priceUsd: 1,
+    change24h: 0.0001,
+    color: '#2775ca',
+    icon: usdcoinUrl,
+    spark: walk(23, 1180.2, 0.0001),
+  },
+  {
+    id: 'btc',
+    name: 'Bitcoin',
+    symbol: 'BTC',
+    balance: 0.0482,
+    priceUsd: 118908.5,
+    change24h: -0.0184,
+    color: '#f7931a',
+    icon: bitcoinUrl,
+    spark: walk(37, 5731.44, -0.0184),
+  },
+]
+
+/** Direcciones de recepción mock, una por red. */
+export const RECEIVE_ADDRESSES: Record<CardNetwork, string> = {
+  Tron: 'TQ5nrRz8yb3s1hP3jJ7vE9kQ2wLmX4cDaB',
+  Ethereum: '0x9f4B8a2C7d1E6f3A5b0C8d7E2f1A4c6B9d3E5f7A',
+}
+
+/** Cuenta bancaria mock para retiros y depósitos por transferencia. */
+export const BANK_ACCOUNT = { bank: 'Banco Amazonas', alias: 'pablo.loopay', last4: '4821' }
+
+/** Contenido real del canal de soporte, compartido por Bienvenida y Más. */
+export const SUPPORT = {
+  email: 'ayuda@loopay.com',
+  phone: '+593 99 123 4567',
+  hours: 'Lunes a sábado, 8:00–20:00 (ECT)',
+}
+
+export type Notif = {
+  id: string
+  title: string
+  body: string
+  date: Date
+  read: boolean
+}
+
+export const NOTIFS: Notif[] = [
+  {
+    id: 'n1',
+    title: 'Depósito acreditado',
+    body: 'Recibiste $1,200.00 en USDT desde Banco Amazonas.',
+    date: daysAgo(1),
+    read: false,
+  },
+  {
+    id: 'n2',
+    title: 'Crédito preaprobado',
+    body: 'Tienes hasta $5,000 con garantía BTC al 65% de LTV.',
+    date: daysAgo(2),
+    read: false,
+  },
+  {
+    id: 'n3',
+    title: 'Nuevo dispositivo',
+    body: 'Iniciaste sesión desde un iPhone reconocido.',
+    date: daysAgo(4),
+    read: true,
+  },
+  {
+    id: 'n4',
+    title: 'Consumo con tarjeta',
+    body: 'De Prati por $1,296.40 con la tarjeta Principal.',
+    date: daysAgo(3),
+    read: false,
+  },
+]
+
+export type LoanOffer = {
+  id: string
+  /** Activo que se recibe y activo que queda en garantía. */
+  asset: AssetId
+  collateral: AssetId
+  amountUsd: number
+  /** Loan-to-value del colateral (0–1). */
+  ltv: number
+  apr: number
+  termMonths: number
+  /** Cuota mensual estimada (amortización francesa). */
+  monthlyUsd: number
+  featured?: boolean
+}
+
+export const LOAN_OFFERS: LoanOffer[] = [
+  {
+    id: 'loan-usdt-btc',
+    asset: 'usdt',
+    collateral: 'btc',
+    amountUsd: 5000,
+    ltv: 0.65,
+    apr: 0.089,
+    termMonths: 12,
+    monthlyUsd: 436.93,
+    featured: true,
+  },
+  {
+    id: 'loan-usdc-btc',
+    asset: 'usdc',
+    collateral: 'btc',
+    amountUsd: 2500,
+    ltv: 0.5,
+    apr: 0.074,
+    termMonths: 6,
+    monthlyUsd: 425.74,
+  },
+  {
+    id: 'loan-usdt-usdc',
+    asset: 'usdt',
+    collateral: 'usdc',
+    amountUsd: 1800,
+    ltv: 0.8,
+    apr: 0.102,
+    termMonths: 9,
+    monthlyUsd: 208.59,
+  },
+]
+
+/** Crédito activo: nace de una solicitud confirmada y vive en el store. */
+export type ActiveLoan = {
+  id: string
+  asset: AssetId
+  collateral: AssetId
+  amountUsd: number
+  collateralUsd: number
+  ltv: number
+  apr: number
+  termMonths: number
+  monthlyUsd: number
+  date: Date
+}
+
+export type Prefs = {
+  hideBalances: boolean
+  biometrics: boolean
+  notifications: boolean
 }
 
 /** Tarjetas tokenizadas del usuario: todas USDT, cada una con su propia historia. */
@@ -185,20 +290,6 @@ export const CARDS: CardProduct[] = [
     cvv: '842',
     last4: '8391',
     limit: 4000,
-    activity: [
-      { id: 'u1', date: daysAgo(0), merchant: 'Kywik Café', category: 'cafe', amount: -4.8 },
-      { id: 'u2', date: daysAgo(0), merchant: 'Uber', category: 'transporte', amount: -12.3 },
-      { id: 'u3', date: daysAgo(1), merchant: 'Supermaxi', category: 'super', amount: -214.65 },
-      { id: 'u4', date: daysAgo(2), merchant: 'Netflix', category: 'suscripciones', amount: -15.99 },
-      { id: 'u5', date: daysAgo(3), merchant: 'De Prati', category: 'compras', amount: -1296.4 },
-      { id: 'u6', date: daysAgo(5), merchant: 'Restaurante La Purita', category: 'restaurantes', amount: -64.2 },
-      { id: 'u7', date: daysAgo(8), merchant: 'Novocompu', category: 'compras', amount: -432.9 },
-      { id: 'u8', date: daysAgo(11), merchant: 'Mi Comisariato', category: 'super', amount: -158.75 },
-      { id: 'u9', date: daysAgo(13), merchant: 'Spotify', category: 'suscripciones', amount: -11.99 },
-      { id: 'u10', date: daysAgo(19), merchant: 'Cabify', category: 'transporte', amount: -18.4 },
-      { id: 'u11', date: daysAgo(26), merchant: 'Fybeca', category: 'compras', amount: -76.15 },
-      { id: 'u12', date: daysAgo(34), merchant: 'Sushi Vegas', category: 'restaurantes', amount: -52.6 },
-    ],
   },
   {
     id: 'card-ahorro',
@@ -211,17 +302,6 @@ export const CARDS: CardProduct[] = [
     cvv: '317',
     last4: '2204',
     limit: 2500,
-    activity: [
-      { id: 'd1', date: daysAgo(0), merchant: 'Kywik Café', category: 'cafe', amount: -6.2 },
-      { id: 'd2', date: daysAgo(1), merchant: 'Tienda Mitsubishi', category: 'super', amount: -96.4 },
-      { id: 'd3', date: daysAgo(3), merchant: 'iCloud+', category: 'suscripciones', amount: -2.99 },
-      { id: 'd4', date: daysAgo(5), merchant: 'Pimiento', category: 'restaurantes', amount: -38.75 },
-      { id: 'd5', date: daysAgo(7), merchant: 'Cabify', category: 'transporte', amount: -14.1 },
-      { id: 'd6', date: daysAgo(10), merchant: 'Sukasa', category: 'compras', amount: -689.9 },
-      { id: 'd7', date: daysAgo(13), merchant: 'Supermaxi', category: 'super', amount: -212.3 },
-      { id: 'd8', date: daysAgo(20), merchant: 'Habibi Café', category: 'cafe', amount: -8.4 },
-      { id: 'd9', date: daysAgo(29), merchant: 'Casa Taller', category: 'restaurantes', amount: -46.5 },
-    ],
   },
   {
     id: 'card-compras',
@@ -234,32 +314,75 @@ export const CARDS: CardProduct[] = [
     cvv: '908',
     last4: '4476',
     limit: 6000,
-    activity: [
-      { id: 'b1', date: daysAgo(2), merchant: 'De Prati', category: 'compras', amount: -1240.5 },
-      { id: 'b2', date: daysAgo(4), merchant: 'Sushi Vegas', category: 'restaurantes', amount: -98.4 },
-      { id: 'b3', date: daysAgo(9), merchant: 'Mi Comisariato', category: 'super', amount: -318.25 },
-      { id: 'b4', date: daysAgo(12), merchant: 'Apple Store', category: 'compras', amount: -2480 },
-      { id: 'b5', date: daysAgo(13), merchant: 'Kywik Café', category: 'cafe', amount: -9.6 },
-      { id: 'b6', date: daysAgo(18), merchant: 'Cabify', category: 'transporte', amount: -22.6 },
-      { id: 'b7', date: daysAgo(24), merchant: 'Netflix', category: 'suscripciones', amount: -15.99 },
+  },
+]
+
+/** Historial de consumo por tarjeta, en el orden en que se cargaba antes. */
+const CARD_ACTIVITY: Array<{ card: CardProduct['id']; items: Array<[number, string, TxnCategory, number]> }> = [
+  {
+    card: 'card-principal',
+    items: [
+      [0, 'Kywik Café', 'cafe', -4.8],
+      [0, 'Uber', 'transporte', -12.3],
+      [1, 'Supermaxi', 'super', -214.65],
+      [2, 'Netflix', 'suscripciones', -15.99],
+      [3, 'De Prati', 'compras', -1296.4],
+      [5, 'Restaurante La Purita', 'restaurantes', -64.2],
+      [8, 'Novocompu', 'compras', -432.9],
+      [11, 'Mi Comisariato', 'super', -158.75],
+      [13, 'Spotify', 'suscripciones', -11.99],
+      [19, 'Cabify', 'transporte', -18.4],
+      [26, 'Fybeca', 'compras', -76.15],
+      [34, 'Sushi Vegas', 'restaurantes', -52.6],
+    ],
+  },
+  {
+    card: 'card-ahorro',
+    items: [
+      [0, 'Kywik Café', 'cafe', -6.2],
+      [1, 'Tienda Mitsubishi', 'super', -96.4],
+      [3, 'iCloud+', 'suscripciones', -2.99],
+      [5, 'Pimiento', 'restaurantes', -38.75],
+      [7, 'Cabify', 'transporte', -14.1],
+      [10, 'Sukasa', 'compras', -689.9],
+      [13, 'Supermaxi', 'super', -212.3],
+      [20, 'Habibi Café', 'cafe', -8.4],
+      [29, 'Casa Taller', 'restaurantes', -46.5],
+    ],
+  },
+  {
+    card: 'card-compras',
+    items: [
+      [2, 'De Prati', 'compras', -1240.5],
+      [4, 'Sushi Vegas', 'restaurantes', -98.4],
+      [9, 'Mi Comisariato', 'super', -318.25],
+      [12, 'Apple Store', 'compras', -2480],
+      [13, 'Kywik Café', 'cafe', -9.6],
+      [18, 'Cabify', 'transporte', -22.6],
+      [24, 'Netflix', 'suscripciones', -15.99],
     ],
   },
 ]
 
-export type LoanOffer = {
-  id: string
-  /** Activo que se recibe y activo que queda en garantía. */
-  asset: string
-  collateral: string
-  amountUsd: number
-  /** Loan-to-value del colateral (0–1). */
-  ltv: number
-  apr: number
-  termMonths: number
-  /** Cuota mensual estimada (amortización francesa). */
-  monthlyUsd: number
-  featured?: boolean
-}
+/** Semilla de movimientos: consumos por tarjeta + ingresos del wallet. */
+export const SEED_TXNS: Txn[] = [
+  ...CARD_ACTIVITY.flatMap(({ card, items }) =>
+    items.map(([days, merchant, category, amount], i) => ({
+      id: `${card}-${i}`,
+      date: daysAgo(days),
+      kind: 'gasto' as const,
+      amount,
+      description: merchant,
+      category,
+      asset: 'usdt' as const,
+      cardId: card,
+    })),
+  ),
+  { id: 'w1', date: daysAgo(1), kind: 'ingreso', amount: 1200, description: 'Depósito recibido', category: 'deposito', asset: 'usdt' },
+  { id: 'w2', date: daysAgo(4), kind: 'ingreso', amount: 350, description: 'Lucía Ferrer te envió', category: 'recibido', asset: 'usdt' },
+  { id: 'w3', date: daysAgo(6), kind: 'gasto', amount: 850, description: 'Compra de Bitcoin', category: 'conversion', asset: 'btc' },
+  { id: 'w4', date: daysAgo(12), kind: 'gasto', amount: 200, description: 'Retiro a cuenta bancaria', category: 'retiro', asset: 'usdt' },
+]
 
 /** PRNG determinista (mulberry32): misma historia financiera en cada carga. */
 function mulberry32(seed: number) {

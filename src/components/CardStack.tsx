@@ -2,8 +2,8 @@ import { Copy, Eye, EyeOff, RefreshCw, Snowflake } from 'lucide-react'
 import { AnimatePresence, LayoutGroup, motion } from 'motion/react'
 import { useEffect, useState } from 'react'
 
+import { TAP_SPRING } from '@/lib/motion'
 import { VirtualCard } from '@/components/VirtualCard'
-import { deriveCardActivity } from '@/data/derive'
 import { CARDS, type CardLimit, type CardProduct } from '@/data/mock'
 import { CARD_SKIN } from '@/data/skin'
 import tetherWhite from '@/assets/tether-white.svg'
@@ -32,7 +32,7 @@ function PeekFace({ card }: { card: CardProduct }) {
   return (
     <div className="flex h-full items-center justify-end gap-2 rounded-t-2xl border border-white/10 bg-[#101014] pr-4">
       <img src={tetherWhite} alt="" className="h-3.5 w-auto" />
-      <span className="text-[11px] tracking-[0.12em] text-white/70 tabular-nums">•••• {card.last4}</span>
+      <span className="text-[11px] tracking-[0.12em] text-white/80 tabular-nums">•••• {card.last4}</span>
     </div>
   )
 }
@@ -50,7 +50,7 @@ function StripFace({ card }: { card: CardProduct }) {
       <span className="flex min-w-0 items-center gap-2.5">
         <img src={tetherWhite} alt="" className="h-4 w-auto" />
         <span className="text-sm font-semibold tracking-[0.04em] text-white">USDT</span>
-        <span className="truncate text-[11px] font-medium uppercase tracking-[0.14em] text-white/55">
+        <span className="truncate text-[11px] font-medium uppercase tracking-[0.14em] text-white/80">
           {card.descriptor}
         </span>
       </span>
@@ -61,18 +61,28 @@ function StripFace({ card }: { card: CardProduct }) {
 
 /**
  * Pila de tarjetas USDT: cantos mínimos colapsados, abanico hacia arriba y
- * controles (congelar, mostrar, copiar) de la tarjeta activa.
+ * controles (congelar, mostrar, copiar) de la tarjeta activa. La actividad y el
+ * gasto del mes llegan del store; las caras se alimentan de la tarjeta activa.
  */
-export function CardStack({ activeId, onSelect }: { activeId: CardProduct['id']; onSelect: (id: CardProduct['id']) => void }) {
+export function CardStack({
+  card: active,
+  spentThisMonth,
+  masked,
+  onSelect,
+}: {
+  card: CardProduct
+  spentThisMonth: number
+  masked: boolean
+  onSelect: (id: CardProduct['id']) => void
+}) {
   const [open, setOpen] = useState(false)
   const [flipped, setFlipped] = useState(false)
   const [frozen, setFrozen] = useState(false)
   const [revealed, setRevealed] = useState(false)
   const [copied, setCopied] = useState(false)
 
-  const { card: active, spentThisMonth } = deriveCardActivity(activeId)
   // stacked[0] es la más cercana detrás de la activa; la profunda queda arriba.
-  const stacked = CARDS.filter((c) => c.id !== activeId).reverse()
+  const stacked = CARDS.filter((c) => c.id !== active.id).reverse()
 
   // Cerrar devuelve el foco a la tarjeta activa: los cantos dejan de ser
   // alcanzables y ningún elemento enfocado queda dentro de un aria-hidden.
@@ -118,6 +128,7 @@ export function CardStack({ activeId, onSelect }: { activeId: CardProduct['id'];
         flipped={flipped}
         frozen={frozen}
         revealed={revealed}
+        masked={masked}
         limit={{ spent: spentThisMonth, total: active.limit }}
         onToggle={() => (open ? close() : setOpen(true))}
         onClose={close}
@@ -131,7 +142,7 @@ export function CardStack({ activeId, onSelect }: { activeId: CardProduct['id'];
           type="button"
           aria-pressed={frozen}
           whileTap={{ scale: 0.95 }}
-          transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+          transition={TAP_SPRING}
           onClick={() => setFrozen((f) => !f)}
           className="btn btn-ghost flex-col gap-1 py-3 text-[11px]"
         >
@@ -144,7 +155,7 @@ export function CardStack({ activeId, onSelect }: { activeId: CardProduct['id'];
           aria-pressed={revealed}
           aria-label={revealed ? 'Ocultar número de tarjeta' : 'Mostrar número de tarjeta'}
           whileTap={{ scale: 0.95 }}
-          transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+          transition={TAP_SPRING}
           onClick={() => setRevealed((r) => !r)}
           className="btn btn-ghost flex-col gap-1 py-3 text-[11px]"
         >
@@ -156,7 +167,7 @@ export function CardStack({ activeId, onSelect }: { activeId: CardProduct['id'];
           type="button"
           aria-label="Copiar número de tarjeta"
           whileTap={{ scale: 0.95 }}
-          transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+          transition={TAP_SPRING}
           onClick={copyNumber}
           className="btn btn-ghost flex-col gap-1 py-3 text-[11px]"
         >
@@ -195,6 +206,7 @@ function CollapsedStack({
   flipped,
   frozen,
   revealed,
+  masked,
   limit,
   onToggle,
   onClose,
@@ -207,6 +219,7 @@ function CollapsedStack({
   flipped: boolean
   frozen: boolean
   revealed: boolean
+  masked: boolean
   limit: CardLimit
   onToggle: () => void
   onClose: () => void
@@ -218,6 +231,9 @@ function CollapsedStack({
   const peeking = stacked.slice(0, MAX_PEEK)
   const shown = open ? stacked : peeking
   const levels = shown.length
+  // Mientras la activa gira (y en reverso) los cantos se esconden: el flip vive
+  // en 3D sobre la pila y cualquier canto visible se recorta contra él.
+  const peeksVisible = open || !flipped
 
   return (
     <motion.div
@@ -239,7 +255,7 @@ function CollapsedStack({
             key={card.id}
             layoutId={card.id}
             initial={false}
-            animate={{ y: open ? (levels - 1 - i) * (STRIP - PEEK) : 0 }}
+            animate={{ y: open ? (levels - 1 - i) * (STRIP - PEEK) : 0, opacity: peeksVisible ? 1 : 0 }}
             transition={FLIGHT}
             aria-hidden={!open}
             className={open ? 'absolute inset-x-0' : 'pointer-events-none absolute inset-x-0'}
@@ -248,7 +264,7 @@ function CollapsedStack({
               zIndex: open ? 31 + (levels - depth) : levels - depth,
               scale: Math.max(0.96, 1 - depth * 0.02),
               filter: `brightness(${1 - depth * 0.07})`,
-              willChange: 'transform',
+              willChange: 'transform, opacity',
             }}
           >
             {open ? (
@@ -269,7 +285,7 @@ function CollapsedStack({
         )
       })}
 
-      {/* Tarjeta activa al frente: el toque alterna el abanico */}
+      {/* Tarjeta activa al frente: el toque alterna el abanico y el flip gira por encima */}
       <motion.div
         key={active.id}
         layoutId={active.id}
@@ -284,6 +300,7 @@ function CollapsedStack({
           flipped={flipped}
           frozen={frozen}
           revealed={revealed}
+          masked={masked}
           skin={CARD_SKIN}
           onClick={onToggle}
           ariaLabel="Cambiar de tarjeta"

@@ -1,24 +1,18 @@
 import { ArrowLeftRight, CreditCard, Landmark, Wallet, type LucideIcon } from 'lucide-react'
-import { AnimatePresence, motion, useReducedMotion, type Variants } from 'motion/react'
+import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
 import { useState } from 'react'
 
 import baLogo from '@/assets/ba-logo-white.png'
 import { BottomSheet } from '@/components/BottomSheet'
 import { PoweredBy } from '@/components/PoweredBy'
 import { SlideToStart } from '@/components/SlideToStart'
+import { SuccessCheck } from '@/components/SuccessCheck'
 import { CardFace } from '@/components/VirtualCard'
 import { CARDS } from '@/data/mock'
 import { CARD_SKIN } from '@/data/skin'
-
-const container: Variants = {
-  hidden: {},
-  show: { transition: { staggerChildren: 0.07, delayChildren: 0.04 } },
-}
-
-const item: Variants = {
-  hidden: { opacity: 0, y: 18 },
-  show: { opacity: 1, y: 0, transition: { type: 'spring', stiffness: 230, damping: 28 } },
-}
+import { SupportBody } from '@/features/SupportSheet'
+import { useWalletActions } from '@/store/use-wallet'
+import { TAP_SPRING, container, item } from '@/lib/motion'
 
 /** Capas del abanico de bienvenida, de adelante hacia atrás. */
 const FAN_LAYERS = [
@@ -35,18 +29,37 @@ const SERVICES: Array<{ id: string; label: string; icon: LucideIcon }> = [
 ]
 
 type Sheet = 'cuenta' | 'ayuda'
-const SHEET_LABEL: Record<Sheet, string> = {
-  cuenta: 'Crear cuenta',
-  ayuda: '¿Necesitas ayuda?',
-}
 
 /**
  * Bienvenida previa a la app: identidad, promesa, tarjeta flotante, servicios y
- * el gesto de entrada. Al completar el gesto se marca la intro como vista.
+ * el gesto de entrada. "Crear cuenta" es un mini-flujo real (datos básicos →
+ * éxito → entra, marcando la cuenta en el store) y "Ayuda" abre soporte.
  */
 export function WelcomeView({ onDone }: { onDone: () => void }) {
   const reduced = useReducedMotion()
+  const { createAccount } = useWalletActions()
   const [sheet, setSheet] = useState<Sheet | null>(null)
+  const [name, setName] = useState('')
+  const [email, setEmail] = useState('')
+  const [touched, setTouched] = useState(false)
+  const [created, setCreated] = useState(false)
+
+  const nameInvalid = name.trim().length < 2
+  const emailInvalid = !/^\S+@\S+\.\S+$/.test(email.trim())
+
+  const submitAccount = () => {
+    setTouched(true)
+    if (nameInvalid || emailInvalid) return
+    createAccount(name, email)
+    setCreated(true)
+  }
+
+  // Tras el check, entra a la app con la cuenta ya creada.
+  const finishCreation = () => {
+    setCreated(false)
+    setSheet(null)
+    onDone()
+  }
 
   return (
     <motion.div
@@ -124,7 +137,7 @@ export function WelcomeView({ onDone }: { onDone: () => void }) {
         <motion.button
           type="button"
           whileTap={{ scale: 0.96 }}
-          transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+          transition={TAP_SPRING}
           onClick={() => setSheet('cuenta')}
           className="btn btn-ghost flex-1 text-sm text-ink-2"
         >
@@ -133,7 +146,7 @@ export function WelcomeView({ onDone }: { onDone: () => void }) {
         <motion.button
           type="button"
           whileTap={{ scale: 0.96 }}
-          transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+          transition={TAP_SPRING}
           onClick={() => setSheet('ayuda')}
           className="btn btn-ghost flex-1 text-sm text-ink-2"
         >
@@ -147,11 +160,74 @@ export function WelcomeView({ onDone }: { onDone: () => void }) {
       </motion.footer>
 
       <AnimatePresence>
-        {sheet && (
-          <BottomSheet key={sheet} label={SHEET_LABEL[sheet]} onClose={() => setSheet(null)}>
-            <h2 className="title-section">{SHEET_LABEL[sheet]}</h2>
-            <p className="mt-1 text-sm text-ink-2">Disponible próximamente en la beta</p>
+        {sheet === 'cuenta' && (
+          <BottomSheet key="cuenta" label="Crear cuenta" onClose={() => setSheet(null)}>
+            <h2 className="title-section">Crear cuenta</h2>
+            <p className="mt-1 text-sm text-ink-2">Dos datos y entras a tu banca digital</p>
+
+            <div className="mt-4 grid gap-3">
+              <label className="glass block rounded-2xl px-4 py-3">
+                <span className="block text-xs text-ink-3">Nombre</span>
+                <input
+                  type="text"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  onBlur={() => setTouched(true)}
+                  placeholder="Nombre y apellido"
+                  aria-label="Nombre para la nueva cuenta"
+                  data-testid="input-cuenta-nombre"
+                  className="mt-0.5 w-full bg-transparent text-sm text-ink outline-none placeholder:text-ink-3"
+                />
+              </label>
+
+              <label className="glass block rounded-2xl px-4 py-3">
+                <span className="block text-xs text-ink-3">Email</span>
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="tu@email.com"
+                  aria-label="Email para la nueva cuenta"
+                  data-testid="input-cuenta-email"
+                  className="mt-0.5 w-full bg-transparent text-sm text-ink outline-none placeholder:text-ink-3"
+                />
+              </label>
+            </div>
+
+            {touched && (nameInvalid || emailInvalid) && (
+              <p className="mt-2 text-sm font-medium text-red-bright" aria-live="polite">
+                {nameInvalid ? 'Escribe tu nombre completo' : 'Ingresa un email válido'}
+              </p>
+            )}
+
+            <button
+              type="button"
+              onClick={submitAccount}
+              data-testid="crear-cuenta"
+              className="btn btn-primary mt-4 w-full text-sm"
+            >
+              Crear cuenta
+            </button>
           </BottomSheet>
+        )}
+
+        {sheet === 'ayuda' && (
+          <BottomSheet key="ayuda" label="¿Necesitas ayuda?" onClose={() => setSheet(null)}>
+            <h2 className="title-section">Estamos para ayudarte</h2>
+            <p className="mt-1 mb-4 text-sm text-ink-2">Canales oficiales de soporte</p>
+            <SupportBody />
+          </BottomSheet>
+        )}
+      </AnimatePresence>
+
+      {/* Éxito de la cuenta creada: el check desembolsa el ingreso a la app */}
+      <AnimatePresence>
+        {created && (
+          <SuccessCheck
+            title={`¡Bienvenido, ${name.trim().split(' ')[0]}!`}
+            sub="Tu cuenta quedó lista"
+            onDone={finishCreation}
+          />
         )}
       </AnimatePresence>
     </motion.div>

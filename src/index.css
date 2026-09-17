@@ -23,10 +23,13 @@
   --color-panel-2: #1d1f27; /* superficie elevada (popovers, tooltips, chips) */
   --color-card: #141419; /* carbón translúcido de la piel de tarjeta */
 
-  /* Tinta */
-  --color-ink: #f4f2f5; /* texto primario */
-  --color-ink-2: #a39fab; /* texto secundario */
-  --color-ink-3: #6b6675; /* texto atenuado (ejes, etiquetas) */
+  /*
+   * Tinta: todo blanco. La jerarquía se expresa con tamaño, peso y espaciado,
+   * nunca con gris. Piso tipográfico 80 %; deshabilitados pueden bajar a 50 %.
+   */
+  --color-ink: #ffffff; /* texto primario */
+  --color-ink-2: rgb(255 255 255 / 0.92); /* texto secundario */
+  --color-ink-3: rgb(255 255 255 / 0.8); /* texto atenuado (ejes, etiquetas) */
 
   /* Cromo */
   --color-line: #26222b; /* bordes hairline */

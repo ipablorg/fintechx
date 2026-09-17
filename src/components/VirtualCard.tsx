@@ -5,7 +5,7 @@ import { useId, useState, type CSSProperties, type ReactNode } from 'react'
 import baLogo from '@/assets/ba-logo-white.png'
 import tetherWhite from '@/assets/tether-white.svg'
 import type { CardLimit, CardProduct } from '@/data/mock'
-import { formatMoneyParts, formatMoney, formatRate } from '@/lib/format'
+import { MASKED_AMOUNT, formatMoneyParts, formatMoney, formatRate } from '@/lib/format'
 
 const ENTRANCE = { duration: 2.2, ease: 'easeInOut' as const, delay: 0.35 }
 
@@ -140,7 +140,7 @@ function Face({
 }
 
 /** Contenido del frente, compartido por la tarjeta 3D y las capas planas. */
-function FrontContent({ card, revealed, noiseId }: { card: CardProduct; revealed: boolean; noiseId: string }) {
+function FrontContent({ card, revealed, masked = false, noiseId }: { card: CardProduct; revealed: boolean; masked?: boolean; noiseId: string }) {
   const { whole, cents } = formatMoneyParts(card.balance)
 
   return (
@@ -151,12 +151,20 @@ function FrontContent({ card, revealed, noiseId }: { card: CardProduct; revealed
         {/* Saldo de la tarjeta a la izquierda, marca a la derecha */}
         <div className="flex items-start justify-between gap-[3cqw]">
           <div className="min-w-0">
-            <p className="text-[min(3.3cqw,13px)] leading-none text-white/60">Saldo disponible</p>
+            <p className="text-[min(3.3cqw,13px)] leading-none text-white/80">Saldo disponible</p>
             <p className="mt-[2cqw] text-[min(7.8cqw,31px)] leading-none font-bold tracking-[-0.02em] tabular-nums">
-              <span className="text-white" style={embossed}>
-                {whole}
-              </span>
-              <span className="text-white/50">{cents}</span>
+              {masked ? (
+                <span className="text-white" style={embossed}>
+                  {MASKED_AMOUNT}
+                </span>
+              ) : (
+                <>
+                  <span className="text-white" style={embossed}>
+                    {whole}
+                  </span>
+                  <span className="text-white/80">{cents}</span>
+                </>
+              )}
             </p>
           </div>
 
@@ -167,7 +175,7 @@ function FrontContent({ card, revealed, noiseId }: { card: CardProduct; revealed
                 USDT
               </span>
             </span>
-            <span className="text-[min(2.9cqw,11px)] leading-none tracking-[0.08em] text-white/55 uppercase">{card.descriptor}</span>
+            <span className="text-[min(2.9cqw,11px)] leading-none tracking-[0.08em] text-white/80 uppercase">{card.descriptor}</span>
           </span>
         </div>
 
@@ -177,7 +185,7 @@ function FrontContent({ card, revealed, noiseId }: { card: CardProduct; revealed
             <p className="text-[min(3.7cqw,14px)] leading-none tracking-[0.14em] text-white tabular-nums" style={embossed}>
               {revealed ? card.number : `•••• ${card.last4}`}
             </p>
-            <p className="mt-[1.6cqw] text-[min(2.9cqw,11px)] leading-none tracking-[0.1em] text-white/50 uppercase">{card.network}</p>
+            <p className="mt-[1.6cqw] text-[min(2.9cqw,11px)] leading-none tracking-[0.1em] text-white/80 uppercase">{card.network}</p>
           </div>
 
           <p className="shrink-0 text-[min(5cqw,19px)] leading-none font-bold text-white italic" style={embossed}>
@@ -193,12 +201,14 @@ function FrontContent({ card, revealed, noiseId }: { card: CardProduct; revealed
 export function CardFace({
   card,
   revealed = false,
+  masked = false,
   skin,
   className = '',
   style,
 }: {
   card: CardProduct
   revealed?: boolean
+  masked?: boolean
   skin?: CSSProperties
   className?: string
   style?: CSSProperties
@@ -211,7 +221,7 @@ export function CardFace({
       style={{ ...skin, ...style }}
     >
       <FrontMaterial />
-      <FrontContent card={card} revealed={revealed} noiseId={noiseId} />
+      <FrontContent card={card} revealed={revealed} masked={masked} noiseId={noiseId} />
     </div>
   )
 }
@@ -224,6 +234,8 @@ type Props = {
   flipped?: boolean
   frozen?: boolean
   revealed?: boolean
+  /** Preferencia global de saldos ocultos: tapa el saldo del frente. */
+  masked?: boolean
   skin?: CSSProperties
   /** Tocar la tarjeta: alterna el abanico (la tarjeta es el botón que lo anuncia). */
   onClick?: () => void
@@ -240,14 +252,14 @@ function LimitBody({ spent, total }: CardLimit) {
   return (
     <div>
       <div className="flex items-baseline justify-between gap-2">
-        <p className="text-[min(2.6cqw,10px)] tracking-[0.14em] text-white/60 uppercase" style={embossed}>
+        <p className="text-[min(2.6cqw,10px)] tracking-[0.14em] text-white/80 uppercase" style={embossed}>
           Límite mensual
         </p>
         <p className="text-[min(3.2cqw,13px)] font-semibold text-white tabular-nums">{formatRate(ratio)}</p>
       </div>
 
       <p className="mt-[0.8cqw] text-[min(4.4cqw,17px)] font-bold text-white tabular-nums" style={embossed}>
-        {formatMoney(spent)} <span className="text-[min(3cqw,12px)] font-medium text-white/70">de {formatMoney(total)}</span>
+        {formatMoney(spent)} <span className="text-[min(3cqw,12px)] font-medium text-white/80">de {formatMoney(total)}</span>
       </p>
 
       <div
@@ -277,6 +289,7 @@ export function VirtualCard({
   flipped = false,
   frozen = false,
   revealed = false,
+  masked = false,
   skin,
   onClick,
   ariaLabel = 'Cambiar de tarjeta',
@@ -329,7 +342,7 @@ export function VirtualCard({
           {/* Frente: la fila inferior se levanta para despejar el botón de volteo */}
           <Face frozen={frozen} skin={skin} covered={spun && flipped}>
             <div className="h-full pb-[12cqw]">
-              <FrontContent card={card} revealed={revealed} noiseId={noiseId} />
+              <FrontContent card={card} revealed={revealed} masked={masked} noiseId={noiseId} />
             </div>
           </Face>
 
@@ -361,7 +374,7 @@ export function VirtualCard({
                 {/* Titular y vence en columnas */}
                 <div className="grid grid-cols-2 gap-[3cqw]">
                   <div className="min-w-0">
-                    <p className="text-[min(2.6cqw,10px)] tracking-[0.14em] text-white/55 uppercase" style={embossed}>
+                    <p className="text-[min(2.6cqw,10px)] tracking-[0.14em] text-white/80 uppercase" style={embossed}>
                       Titular
                     </p>
                     <p className="truncate text-[min(3.4cqw,13px)] font-semibold text-white" style={embossed}>
@@ -369,7 +382,7 @@ export function VirtualCard({
                     </p>
                   </div>
                   <div>
-                    <p className="text-[min(2.6cqw,10px)] tracking-[0.14em] text-white/55 uppercase" style={embossed}>
+                    <p className="text-[min(2.6cqw,10px)] tracking-[0.14em] text-white/80 uppercase" style={embossed}>
                       Vence
                     </p>
                     <p className="text-[min(3.4cqw,13px)] font-semibold text-white tabular-nums" style={embossed}>
@@ -383,7 +396,7 @@ export function VirtualCard({
                 {/* El co-brand se despeja del botón de volteo con padding derecho */}
                 <div className="flex items-end justify-between gap-3 pe-[15cqw]">
                   <img src={baLogo} alt="Banco Amazonas" className="h-[5cqw] w-auto" />
-                  <p className="text-[min(3cqw,12px)] text-white/65" style={embossed}>
+                  <p className="text-[min(3cqw,12px)] text-white/80" style={embossed}>
                     powered by <span className="font-semibold text-white">Banco Amazonas</span>
                   </p>
                 </div>

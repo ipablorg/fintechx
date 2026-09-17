@@ -2,6 +2,20 @@
 const LOCALE = 'es-MX'
 const CURRENCY = 'USD'
 
+/** Saldo tapado por la preferencia de privacidad: una sola cadena en toda la app. */
+export const MASKED_AMOUNT = '$••••••'
+
+/**
+ * Escala única de montos gigantes: md en las hojas, lg en pantallas completas.
+ * El saldo de Inicio y el monto de cada flujo comparten esta tipografía.
+ */
+export const AMOUNT_TEXT = {
+  md: 'text-[42px] leading-none font-bold tracking-[-0.03em] tabular-nums',
+  lg: 'text-[46px] leading-none font-bold tracking-[-0.03em] tabular-nums',
+} as const
+
+export type AmountSize = keyof typeof AMOUNT_TEXT
+
 const money = new Intl.NumberFormat(LOCALE, {
   style: 'currency',
   currency: CURRENCY,
