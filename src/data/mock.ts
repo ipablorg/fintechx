@@ -38,6 +38,9 @@ export type CardTxn = {
 /** Consumo y tope del mes en curso: alimenta el reverso de la tarjeta. */
 export type CardLimit = { spent: number; total: number }
 
+/** Red donde vive el token de la tarjeta: se muestra bajo los últimos cuatro. */
+export type CardNetwork = 'Tron' | 'Ethereum'
+
 /**
  * Tarjeta virtual tokenizada. Las tres liquidan en USDT (logo Tether + "USDT"
  * en todas las caras) y se distinguen por sus últimos cuatro y su descriptor.
@@ -46,6 +49,9 @@ export type CardProduct = {
   id: 'card-principal' | 'card-ahorro' | 'card-compras'
   /** Alias corto que distingue la tarjeta dentro de la pila. */
   descriptor: 'Principal' | 'Ahorro' | 'Compras'
+  network: CardNetwork
+  /** Saldo disponible de la tarjeta en USDT: alimenta el frente. */
+  balance: number
   number: string
   holder: string
   expiry: string
@@ -171,6 +177,8 @@ export const CARDS: CardProduct[] = [
   {
     id: 'card-principal',
     descriptor: 'Principal',
+    network: 'Tron',
+    balance: 2740.5,
     number: '4213 7712 3345 8391',
     holder: 'PABLO B.',
     expiry: '09/29',
@@ -195,6 +203,8 @@ export const CARDS: CardProduct[] = [
   {
     id: 'card-ahorro',
     descriptor: 'Ahorro',
+    network: 'Ethereum',
+    balance: 1185.25,
     number: '5187 9042 6613 2204',
     holder: 'PABLO B.',
     expiry: '04/28',
@@ -216,6 +226,8 @@ export const CARDS: CardProduct[] = [
   {
     id: 'card-compras',
     descriptor: 'Compras',
+    network: 'Tron',
+    balance: 890.1,
     number: '6042 1187 5590 4476',
     holder: 'PABLO B.',
     expiry: '11/27',

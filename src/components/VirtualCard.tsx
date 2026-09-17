@@ -5,7 +5,7 @@ import { useId, useState, type CSSProperties, type ReactNode } from 'react'
 import baLogo from '@/assets/ba-logo-white.png'
 import tetherWhite from '@/assets/tether-white.svg'
 import type { CardLimit, CardProduct } from '@/data/mock'
-import { formatMoney, formatRate } from '@/lib/format'
+import { formatMoneyParts, formatMoney, formatRate } from '@/lib/format'
 
 const ENTRANCE = { duration: 2.2, ease: 'easeInOut' as const, delay: 0.35 }
 
@@ -15,9 +15,9 @@ const FLIP_SPRING = { type: 'spring', stiffness: 240, damping: 26 } as const
 const TILT_MAX = 8 // grados
 
 /**
- * Vidrio ahumado de todas las caras: carbón translúcido con blur fuerte y un
- * brillo diagonal con tinte rojizo sutil. El texto blanco se lee sobre la base
- * carbón compuesta con la aurora con holgura (≥7:1 en la zona más clara).
+ * Vidrio ahumado del REVERSO: carbón translúcido con brillo diagonal de tinte
+ * rojizo. El frente usa FrontMaterial, una base casi opaca para que el saldo
+ * mantenga contraste sobre cualquier fondo.
  */
 const SMOKE_SHEEN =
   'linear-gradient(125deg, rgb(255 255 255 / 0.12), rgb(255 255 255 / 0.03) 42%, rgb(229 72 77 / 0.12))'
@@ -57,6 +57,37 @@ function Noise({ id }: { id: string }) {
   )
 }
 
+/**
+ * Material del frente: base casi negra con gradiente diagonal, luz radial desde
+ * arriba-izquierda (el volumen), sheen rojizo direccional y dos siluetas
+ * fantasma de tarjetas apiladas recortadas por el borde. Nada de lavado plano.
+ */
+function FrontMaterial() {
+  return (
+    <>
+      <div aria-hidden="true" className="absolute inset-0" style={{ background: 'linear-gradient(135deg, #101014 0%, #16161B 100%)' }} />
+
+      {/* Luz que modela el volumen, con caída rápida */}
+      <div
+        aria-hidden="true"
+        className="absolute inset-0"
+        style={{ background: 'radial-gradient(72% 56% at 8% -6%, rgb(255 255 255 / 0.09) 0%, rgb(255 255 255 / 0) 62%)' }}
+      />
+
+      {/* Dos tarjetas fantasma detrás, giradas y recortadas por el borde */}
+      <div aria-hidden="true" className="absolute top-[16%] -right-[18%] aspect-[1.586] w-[64%] rotate-[12deg] rounded-[10cqw] bg-white/[0.05]" />
+      <div aria-hidden="true" className="absolute top-[28%] -right-[10%] aspect-[1.586] w-[64%] rotate-[24deg] rounded-[10cqw] bg-white/[0.04]" />
+
+      {/* Sheen rojizo solo como dirección, nunca como lavado */}
+      <div
+        aria-hidden="true"
+        className="absolute inset-0"
+        style={{ background: 'linear-gradient(112deg, rgb(255 255 255 / 0) 42%, rgb(224 26 26 / 0.18) 100%)' }}
+      />
+    </>
+  )
+}
+
 function Face({
   frozen,
   back = false,
@@ -74,7 +105,7 @@ function Face({
 }) {
   return (
     <div
-      className="absolute inset-0 overflow-hidden rounded-2xl bg-card/55 backdrop-blur-2xl"
+      className={back ? 'absolute inset-0 overflow-hidden rounded-2xl bg-card/55 backdrop-blur-2xl' : 'absolute inset-0 overflow-hidden rounded-2xl bg-[#101014]'}
       style={{
         backfaceVisibility: 'hidden',
         visibility: covered ? 'hidden' : 'visible',
@@ -84,8 +115,12 @@ function Face({
         ...skin,
       }}
     >
-      {/* Brillo diagonal con tinte rojizo sobre el vidrio */}
-      <div aria-hidden="true" className="absolute inset-0" style={{ background: SMOKE_SHEEN }} />
+      {back ? (
+        /* Brillo diagonal con tinte rojizo sobre el vidrio */
+        <div aria-hidden="true" className="absolute inset-0" style={{ background: SMOKE_SHEEN }} />
+      ) : (
+        <FrontMaterial />
+      )}
 
       {children}
 
@@ -105,63 +140,47 @@ function Face({
 }
 
 /** Contenido del frente, compartido por la tarjeta 3D y las capas planas. */
-function FrontContent({ card, revealed, chipId, noiseId }: { card: CardProduct; revealed: boolean; chipId: string; noiseId: string }) {
-  const masked = `${card.number.slice(0, 4)} •••• •••• ${card.last4}`
+function FrontContent({ card, revealed, noiseId }: { card: CardProduct; revealed: boolean; noiseId: string }) {
+  const { whole, cents } = formatMoneyParts(card.balance)
 
   return (
     <>
       <Noise id={noiseId} />
 
-      <div className="relative flex h-full flex-col justify-between px-[5.5cqw] pt-[3.2cqw] pb-[5.5cqw]">
-        {/* Franja de identificación: logo Tether, activo, descriptor y últimos cuatro */}
-        <div className="flex items-center justify-between gap-3">
-          <span className="flex min-w-0 items-center gap-[2cqw]">
-            <img src={tetherWhite} alt="" className="h-[5.6cqw] w-auto" />
-            <span className="text-[min(4.6cqw,18px)] leading-none font-bold tracking-[0.04em] text-white" style={embossed}>
-              USDT
+      <div className="relative flex h-full flex-col justify-between px-[6cqw] pt-[5cqw] pb-[5cqw]">
+        {/* Saldo de la tarjeta a la izquierda, marca a la derecha */}
+        <div className="flex items-start justify-between gap-[3cqw]">
+          <div className="min-w-0">
+            <p className="text-[min(3.3cqw,13px)] leading-none text-white/60">Saldo disponible</p>
+            <p className="mt-[2cqw] text-[min(7.8cqw,31px)] leading-none font-bold tracking-[-0.02em] tabular-nums">
+              <span className="text-white" style={embossed}>
+                {whole}
+              </span>
+              <span className="text-white/50">{cents}</span>
+            </p>
+          </div>
+
+          <span className="flex shrink-0 flex-col items-end gap-[1.6cqw]">
+            <span className="flex items-center gap-[1.8cqw]">
+              <img src={tetherWhite} alt="" className="h-[4.8cqw] w-auto" />
+              <span className="text-[min(3.4cqw,13px)] leading-none font-semibold tracking-[0.04em] text-white" style={embossed}>
+                USDT
+              </span>
             </span>
-            <span
-              className="truncate text-[min(3.1cqw,12px)] leading-none font-medium tracking-[0.06em] text-white/70"
-              style={embossed}
-            >
-              {card.descriptor}
-            </span>
-          </span>
-          <span
-            className="shrink-0 text-[min(3.8cqw,15px)] leading-none font-semibold text-white/85 tabular-nums"
-            style={embossed}
-          >
-            •••• {card.last4}
+            <span className="text-[min(2.9cqw,11px)] leading-none tracking-[0.08em] text-white/55 uppercase">{card.descriptor}</span>
           </span>
         </div>
 
-        {/* Sin piso en px: la misma cara debe poder encogerse a miniatura */}
-        <p className="text-[min(5.4cqw,23px)] font-medium tracking-[0.16em] text-white tabular-nums" style={embossed}>
-          {revealed ? card.number : masked}
-        </p>
-
-        <div className="flex items-end justify-between gap-3">
-          <div className="flex items-center gap-[2.4cqw]">
-            <Chip id={chipId} />
-            <Wifi strokeWidth={2} className="h-[4.6cqw] w-[4.6cqw] rotate-90 text-white/70" />
-          </div>
+        {/* Últimos cuatro y red a la izquierda, marca de pago a la derecha */}
+        <div className="flex items-end justify-between gap-[3cqw]">
           <div className="min-w-0">
-            <p className="text-[min(2.6cqw,10px)] tracking-[0.14em] text-white/55 uppercase" style={embossed}>
-              Titular
+            <p className="text-[min(3.7cqw,14px)] leading-none tracking-[0.14em] text-white tabular-nums" style={embossed}>
+              {revealed ? card.number : `•••• ${card.last4}`}
             </p>
-            <p className="truncate text-[min(3.6cqw,14px)] font-semibold text-white" style={embossed}>
-              {card.holder}
-            </p>
+            <p className="mt-[1.6cqw] text-[min(2.9cqw,11px)] leading-none tracking-[0.1em] text-white/50 uppercase">{card.network}</p>
           </div>
-          <div>
-            <p className="text-[min(2.6cqw,10px)] tracking-[0.14em] text-white/55 uppercase" style={embossed}>
-              Vence
-            </p>
-            <p className="text-[min(3.6cqw,14px)] font-semibold text-white tabular-nums" style={embossed}>
-              {card.expiry}
-            </p>
-          </div>
-          <p className="text-[min(5cqw,19px)] font-bold text-white italic" style={embossed}>
+
+          <p className="shrink-0 text-[min(5cqw,19px)] leading-none font-bold text-white italic" style={embossed}>
             VISA
           </p>
         </div>
@@ -184,16 +203,15 @@ export function CardFace({
   className?: string
   style?: CSSProperties
 }) {
-  const chipId = useId()
   const noiseId = useId()
 
   return (
     <div
-      className={`@container relative aspect-[1.586] w-full overflow-hidden rounded-2xl bg-card/55 backdrop-blur-2xl ${className}`}
+      className={`@container relative aspect-[1.586] w-full overflow-hidden rounded-2xl bg-[#101014] ${className}`}
       style={{ ...skin, ...style }}
     >
-      <div aria-hidden="true" className="absolute inset-0" style={{ background: SMOKE_SHEEN }} />
-      <FrontContent card={card} revealed={revealed} chipId={chipId} noiseId={noiseId} />
+      <FrontMaterial />
+      <FrontContent card={card} revealed={revealed} noiseId={noiseId} />
     </div>
   )
 }
@@ -310,34 +328,61 @@ export function VirtualCard({
         >
           {/* Frente: la fila inferior se levanta para despejar el botón de volteo */}
           <Face frozen={frozen} skin={skin} covered={spun && flipped}>
-            <div className="h-full pb-[17cqw]">
-              <FrontContent card={card} revealed={revealed} chipId={chipId} noiseId={noiseId} />
+            <div className="h-full pb-[12cqw]">
+              <FrontContent card={card} revealed={revealed} noiseId={noiseId} />
             </div>
           </Face>
 
-          {/* Reverso (pre-rotado 180°): pista magnética, límite mensual y co-brand */}
+          {/* Reverso (pre-rotado 180°): pista, chip, firma, titular/vence, límite y co-brand */}
           <Face frozen={frozen} back skin={skin} covered={spun && !flipped}>
             <Noise id={`${noiseId}-b`} />
 
             <div className="relative flex h-full flex-col">
               {/* Pista magnética */}
-              <div aria-hidden="true" className="mt-[6.5cqw] h-[12cqw] w-full bg-black/85" />
+              <div aria-hidden="true" className="mt-[3.5cqw] h-[10cqw] w-full bg-black/85" />
 
-              <div className="flex flex-1 flex-col justify-between p-[5.5cqw]">
-                <div className="flex items-center gap-3">
-                  <span className="flex h-[7.5cqw] flex-1 items-center justify-end rounded-sm bg-white/90 px-[2cqw] text-[min(3.2cqw,13px)] italic text-black/60">
-                    {card.holder}
+              <div className="flex flex-1 flex-col justify-between gap-[2.5cqw] p-[4.5cqw]">
+                {/* Chip + contactless, y a la derecha firma y CVV */}
+                <div className="flex items-center justify-between gap-[3cqw]">
+                  <span className="flex items-center gap-[2.4cqw]">
+                    <Chip id={chipId} />
+                    <Wifi strokeWidth={2} className="h-[5cqw] w-[5cqw] rotate-90 text-white/70" />
                   </span>
-                  <span className="rounded-sm bg-white/90 px-[2cqw] py-[1.2cqw] text-[min(3.2cqw,13px)] font-semibold text-black tabular-nums">
-                    {card.cvv}
+                  <span className="flex items-center gap-[2cqw]">
+                    <span className="flex h-[7cqw] w-[24cqw] items-center justify-end rounded-sm bg-white/90 px-[2cqw] text-[min(3cqw,12px)] italic text-black/60">
+                      {card.holder}
+                    </span>
+                    <span className="rounded-sm bg-white/90 px-[2cqw] py-[1.2cqw] text-[min(3cqw,12px)] font-semibold text-black tabular-nums">
+                      {card.cvv}
+                    </span>
                   </span>
+                </div>
+
+                {/* Titular y vence en columnas */}
+                <div className="grid grid-cols-2 gap-[3cqw]">
+                  <div className="min-w-0">
+                    <p className="text-[min(2.6cqw,10px)] tracking-[0.14em] text-white/55 uppercase" style={embossed}>
+                      Titular
+                    </p>
+                    <p className="truncate text-[min(3.4cqw,13px)] font-semibold text-white" style={embossed}>
+                      {card.holder}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-[min(2.6cqw,10px)] tracking-[0.14em] text-white/55 uppercase" style={embossed}>
+                      Vence
+                    </p>
+                    <p className="text-[min(3.4cqw,13px)] font-semibold text-white tabular-nums" style={embossed}>
+                      {card.expiry}
+                    </p>
+                  </div>
                 </div>
 
                 <LimitBody spent={limit.spent} total={limit.total} />
 
                 {/* El co-brand se despeja del botón de volteo con padding derecho */}
                 <div className="flex items-end justify-between gap-3 pe-[15cqw]">
-                  <img src={baLogo} alt="Banco Amazonas" className="h-[5.5cqw] w-auto" />
+                  <img src={baLogo} alt="Banco Amazonas" className="h-[5cqw] w-auto" />
                   <p className="text-[min(3cqw,12px)] text-white/65" style={embossed}>
                     powered by <span className="font-semibold text-white">Banco Amazonas</span>
                   </p>

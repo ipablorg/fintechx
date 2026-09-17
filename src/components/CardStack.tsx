@@ -2,28 +2,65 @@ import { Copy, Eye, EyeOff, RefreshCw, Snowflake } from 'lucide-react'
 import { AnimatePresence, LayoutGroup, motion } from 'motion/react'
 import { useEffect, useState } from 'react'
 
-import { CardFace, VirtualCard } from '@/components/VirtualCard'
+import { VirtualCard } from '@/components/VirtualCard'
 import { deriveCardActivity } from '@/data/derive'
 import { CARDS, type CardLimit, type CardProduct } from '@/data/mock'
 import { CARD_SKIN } from '@/data/skin'
+import tetherWhite from '@/assets/tether-white.svg'
 
 /** Vuelo de las tarjetas entre la pila colapsada y el abanico. */
 const FLIGHT = { type: 'spring', stiffness: 350, damping: 32 } as const
 
 /**
- * Canto que asoma de cada tarjeta detrás de la activa, colapsado (px). Calza
- * justo con la franja de identificación de la cara: el corte cae bajo el texto,
- * nunca a media letra.
+ * Canto que asoma de cada tarjeta detrás de la activa, colapsado (px): justo lo
+ * que necesita la identificación mínima sin robarle aire a la tarjeta activa.
  */
-const PEEK = 36
+const PEEK = 26
 /**
- * Franja superior que muestra cada tarjeta del abanico (px): logo, activo,
- * descriptor y últimos cuatro. El corte cae entre el número y la fila inferior.
+ * Franja superior que muestra cada tarjeta del abanico (px): saldo, marca y
+ * descriptor. El corte cae antes del bloque inferior de la cara.
  */
 const STRIP = 130
+/** Máximo de cantos visibles colapsados, haya o no más tarjetas en la pila. */
+const MAX_PEEK = 2
 
 /**
- * Pila de tarjetas USDT: canto compacto colapsado, abanico hacia arriba y
+ * Canto colapsado: identificación mínima (logo + últimos cuatro) alineada a la
+ * derecha. Nada de la cara completa: el peek solo nombra la tarjeta.
+ */
+function PeekFace({ card }: { card: CardProduct }) {
+  return (
+    <div className="flex h-full items-center justify-end gap-2 rounded-t-2xl border border-white/10 bg-[#101014] pr-4">
+      <img src={tetherWhite} alt="" className="h-3.5 w-auto" />
+      <span className="text-[11px] tracking-[0.12em] text-white/70 tabular-nums">•••• {card.last4}</span>
+    </div>
+  )
+}
+
+/**
+ * Franja del abanico: identificación completa de la tarjeta (logo, USDT,
+ * descriptor y últimos cuatro) sin depender de dónde corte la cara completa.
+ */
+function StripFace({ card }: { card: CardProduct }) {
+  return (
+    <div
+      className="flex items-center justify-between gap-3 rounded-t-2xl border border-white/10 bg-[#101014] py-4 pl-5 pr-4"
+      style={{ height: STRIP }}
+    >
+      <span className="flex min-w-0 items-center gap-2.5">
+        <img src={tetherWhite} alt="" className="h-4 w-auto" />
+        <span className="text-sm font-semibold tracking-[0.04em] text-white">USDT</span>
+        <span className="truncate text-[11px] font-medium uppercase tracking-[0.14em] text-white/55">
+          {card.descriptor}
+        </span>
+      </span>
+      <span className="shrink-0 text-[13px] tracking-[0.12em] text-white/80 tabular-nums">•••• {card.last4}</span>
+    </div>
+  )
+}
+
+/**
+ * Pila de tarjetas USDT: cantos mínimos colapsados, abanico hacia arriba y
  * controles (congelar, mostrar, copiar) de la tarjeta activa.
  */
 export function CardStack({ activeId, onSelect }: { activeId: CardProduct['id']; onSelect: (id: CardProduct['id']) => void }) {
@@ -145,10 +182,11 @@ export function CardStack({ activeId, onSelect }: { activeId: CardProduct['id'];
 
 /**
  * Pila colapsada y abanico. La tarjeta activa queda al frente (z máxima, abajo
- * del grupo) y el resto sube por encima de ella al abrir: cada una muestra una
- * franja superior de STRIP px con su identificación. El padding superior del
- * contenedor crece con el mismo muelle, así el contenido de abajo baja suave y
- * nada se recorta. N se deriva de CARDS, nada está clavado a 3.
+ * del grupo); colapsado, cada tarjeta de atrás muestra un canto de PEEK px con
+ * su identificación mínima, y al abrir sube para dejar ver una franja de STRIP
+ * px de su cara. El padding superior del contenedor crece con el mismo muelle,
+ * así el contenido de abajo baja suave y nada se recorta. N se deriva de CARDS,
+ * nada está clavado a 3.
  */
 function CollapsedStack({
   active,
@@ -175,13 +213,17 @@ function CollapsedStack({
   onSelect: (id: CardProduct['id']) => void
   onFlip: () => void
 }) {
-  const levels = stacked.length
+  // Colapsado asoman como máximo MAX_PEEK cantos; el abanico revela todas.
+  // ponytail: al abrir se montan las extras de golpe, sin vuelo desde el canto.
+  const peeking = stacked.slice(0, MAX_PEEK)
+  const shown = open ? stacked : peeking
+  const levels = shown.length
 
   return (
     <motion.div
       className="relative"
       initial={false}
-      animate={{ paddingTop: levels * (open ? STRIP : PEEK) }}
+      animate={{ paddingTop: open ? stacked.length * STRIP : peeking.length * PEEK }}
       transition={FLIGHT}
     >
       {/* Toque fuera del abanico: colapsa sin cambiar la selección */}
@@ -189,8 +231,8 @@ function CollapsedStack({
         <button type="button" aria-label="Cerrar abanico" onClick={onClose} className="fixed inset-0 z-30 cursor-default" />
       )}
 
-      {/* Tarjetas de atrás: canto de PEEK px colapsadas, franja de STRIP px en el abanico */}
-      {stacked.map((card, i) => {
+      {/* Tarjetas de atrás: canto mínimo colapsado, franja amplia en el abanico */}
+      {shown.map((card, i) => {
         const depth = i + 1
         return (
           <motion.div
@@ -216,10 +258,12 @@ function CollapsedStack({
                 aria-label={`Elegir tarjeta USDT ${card.descriptor} •••• ${card.last4}`}
                 className="block w-full cursor-pointer text-left"
               >
-                <CardFace card={card} />
+                <StripFace card={card} />
               </button>
             ) : (
-              <CardFace card={card} />
+              <div style={{ height: PEEK }}>
+                <PeekFace card={card} />
+              </div>
             )}
           </motion.div>
         )
